@@ -1,0 +1,973 @@
+\documentclass[12pt,a4paper]{article}
+
+% ===== PACKAGES =====
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, backgrounds, calc, patterns, decorations.pathmorphing}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins, breakable}
+\usepackage{mathtools}
+\usepackage{bm}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{setspace}
+
+\geometry{margin=2.5cm, top=3cm, bottom=3cm}
+
+% ===== COLORS =====
+\definecolor{technicalblue}{RGB}{30,80,160}
+\definecolor{laymangreen}{RGB}{20,130,70}
+\definecolor{algorithmgray}{RGB}{245,247,250}
+\definecolor{headerblue}{RGB}{10,50,120}
+\definecolor{accentorange}{RGB}{220,100,20}
+\definecolor{lightblue}{RGB}{220,235,255}
+\definecolor{lightgreen}{RGB}{220,245,230}
+\definecolor{lightgray}{RGB}{240,242,245}
+\definecolor{darkgray}{RGB}{60,60,70}
+\definecolor{modalpurple}{RGB}{130,40,180}
+\definecolor{lossred}{RGB}{190,30,30}
+\definecolor{encodercolor}{RGB}{60,120,200}
+\definecolor{fusioncolor}{RGB}{200,80,20}
+\definecolor{cachecolor}{RGB}{30,140,100}
+
+% ===== TIKZ STYLES (matching GCN flowchart style) =====
+\tikzset{
+  basebox/.style={rectangle, rounded corners=4pt, draw=black!60, align=center, font=\footnotesize},
+  titlebox/.style={basebox, fill=headerblue, text=white, minimum width=5cm, minimum height=1.2cm, font=\bfseries\normalsize},
+  stagebox/.style={basebox, fill=lightblue, minimum width=4.5cm, minimum height=1.1cm, thick},
+  encoderbox/.style={basebox, fill=encodercolor!20, draw=encodercolor, minimum width=3.8cm, minimum height=1cm, thick},
+  fusionbox/.style={basebox, fill=fusioncolor!20, draw=fusioncolor, minimum width=5cm, minimum height=1.2cm, thick},
+  lossbox/.style={basebox, fill=lossred!15, draw=lossred, minimum width=5cm, minimum height=1.1cm},
+  outputbox/.style={basebox, fill=laymangreen!15, draw=laymangreen, minimum width=4.5cm, minimum height=1cm, thick},
+  databox/.style={basebox, fill=cachecolor!15, draw=cachecolor, minimum width=4cm, minimum height=1cm},
+  arrow/.style={->, >=Stealth, thick, color=black!70},
+  thickarrow/.style={->, >=Stealth, very thick, color=black},
+  redarrow/.style={->, >=Stealth, thick, color=lossred},
+  bluearrow/.style={->, >=Stealth, thick, color=encodercolor},
+  greenarrow/.style={->, >=Stealth, thick, color=cachecolor},
+  dashedarrow/.style={->, >=Stealth, thick, dashed, color=darkgray!60},
+  innerarch/.style={rectangle, draw=black!40, fill=white, minimum height=0.7cm, font=\tiny},
+  diamondbox/.style={diamond, draw=accentorange, fill=accentorange!15, align=center, font=\tiny, aspect=2},
+}
+
+% ===== THEOREM ENVIRONMENTS =====
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{axiom}[theorem]{Axiom}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+% ===== LAYMANBOX ENVIRONMENT =====
+\newtcolorbox{laymanbox}[1][]{
+  enhanced, breakable,
+  colback=lightgreen!40, colframe=laymangreen!80,
+  title={\textbf{In Simple Terms}},
+  fonttitle=\bfseries\small\color{white},
+  coltitle=white,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=laymangreen},
+  #1
+}
+\newtcolorbox{technicalbox}[1][]{
+  enhanced, breakable,
+  colback=lightblue!50, colframe=technicalblue!70,
+  title={\textbf{Technical Details}},
+  fonttitle=\bfseries\small\color{white},
+  coltitle=white,
+  attach boxed title to top left={yshift=-2mm, xshift=4mm},
+  boxed title style={colback=technicalblue},
+  #1
+}
+
+% ===== DOCUMENT =====
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{headerblue} MIVA-KNIGHT\\[0.4em]
+  \Large Pipeline E: Multimodal Fusion Model}\\[1.5em]
+  {\large\color{darkgray} CMU-MOSI Dataset~$\cdot$~Text + Audio + Video~$\cdot$~Cross-Modal Transformer Fusion}\\[0.8em]
+  \rule{12cm}{1.5pt}\\[1em]
+  {\large\bfseries Comprehensive Technical \& Conceptual Documentation}\\[0.5em]
+  {\normalsize Algorithms, Pseudocode, Proofs, Flow Diagrams, Theorems, and Layman Explanations}\\[3em]
+  \begin{tcolorbox}[colback=lightblue!60, colframe=technicalblue, width=10cm]
+    \centering\small
+    This document fully explains every algorithm and component\\
+    implemented in \texttt{MIVA\_KNIGHT\_PipelineE\_CMUMOSI\_Annotated.ipynb}.\\[0.3em]
+    \textbf{No prior deep-learning knowledge required for the layman sections.}
+  \end{tcolorbox}
+  \vfill
+  {\normalsize MIVA-KNIGHT Project~$\cdot$~IT 581}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%======================================================================
+\section{Project Overview}
+%======================================================================
+
+\subsection{What is MIVA-KNIGHT Pipeline E?}
+
+\begin{technicalbox}
+Pipeline E is the multimodal sentiment-analysis stage of the MIVA-KNIGHT (Multimodal Intelligence for Video Analysis) system. It processes three concurrent data streams from the CMU-MOSI corpus (Multimodal Sentiment Intensity dataset):
+\begin{itemize}[nosep]
+  \item \textbf{Text}: transcribed speech sentences ($\to$ BERT encoder)
+  \item \textbf{Audio}: raw 16\,kHz waveform ($\to$ Wav2Vec~2.0 encoder)
+  \item \textbf{Video}: one representative frame ($\to$ ResNet-50 encoder)
+\end{itemize}
+All three streams are projected to a common 512-dimensional embedding space and fused by a 2-layer Transformer encoder, which outputs a continuous sentiment score in $[-3, +3]$.
+\end{technicalbox}
+
+\begin{laymanbox}
+Imagine you are watching a video of someone giving a product review. To understand how they feel, you pay attention to \emph{three things simultaneously}: what they say (words), how they say it (tone of voice), and how they look while saying it (facial expression). Pipeline E does exactly the same thing using three AI specialists — one for words, one for audio, one for video — and then combines all three opinions to make a final judgement.
+\end{laymanbox}
+
+\subsection{Dataset: CMU-MOSI}
+
+\begin{definition}[CMU-MOSI]
+The Carnegie Mellon University Multimodal Opinion Sentiment and Intensity (CMU-MOSI) dataset consists of 2,199 video opinion segments from 93 YouTube videos. Each segment is annotated with a continuous sentiment score $y \in [-3, +3]$ where $-3$ = strongly negative and $+3$ = strongly positive.
+\end{definition}
+
+The standard video-level splits used in Pipeline E are:
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Split} & \textbf{Video IDs} & \textbf{Segments} & \textbf{Purpose} \\
+\midrule
+Train & 59 & 1,521 & Model optimisation \\
+Validation & 15 & 314 & Hyperparameter selection / early stopping \\
+Test & 19 & 364 & Final unbiased evaluation \\
+\midrule
+\textbf{Total} & 93 & \textbf{2,199} & — \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{remark}[Data Leakage Prevention]
+Splits are at the \emph{video} level, not segment level. If the same YouTube video appeared in both train and test, the model could memorise speaker-specific cues. Video-level splits prevent this by ensuring every segment of a given video belongs to exactly one split.
+\end{remark}
+
+%======================================================================
+\section{Full Pipeline Flowchart}
+%======================================================================
+
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[node distance=1.1cm and 1.4cm]
+
+  % ===== INPUT LAYER =====
+  \node[basebox, fill=black!85, text=white, minimum width=2.2cm, minimum height=2.2cm] (textIn) at (0,0) {
+    \begin{tikzpicture}[scale=0.4]
+      \foreach \i in {1,2,3,4} \draw[white, thick] (0,\i*0.3) -- (1.5,\i*0.3);
+    \end{tikzpicture}\\
+    \textbf{Text}\\$T_i$
+  };
+
+  \node[basebox, fill=black!85, text=white, minimum width=2.2cm, minimum height=2.2cm, below=0.8cm of textIn] (audioIn) {
+    \begin{tikzpicture}[scale=0.4]
+      \draw[white, thick, smooth] plot[domain=0:1.5, samples=30] (\x, {0.3*sin(10*\x r)});
+    \end{tikzpicture}\\
+    \textbf{Audio}\\$A_i$
+  };
+
+  \node[basebox, fill=black!85, text=white, minimum width=2.2cm, minimum height=2.2cm, below=0.8cm of audioIn] (videoIn) {
+    \begin{tikzpicture}[scale=0.4]
+      \draw[white, thick] (0,0) rectangle (1.5,1);
+      \draw[white, fill=white!40] (0.6,0.3) -- (1.1,0.5) -- (0.6,0.7) -- cycle;
+    \end{tikzpicture}\\
+    \textbf{Video}\\$V_i$
+  };
+
+  % ===== FROZEN ENCODERS =====
+  \node[encoderbox, right=1.6cm of textIn] (bert) {
+    \textbf{BERT}\\
+    \tiny (frozen, 110M params)\\
+    \tiny $[\text{CLS}] \in \mathbb{R}^{768}$
+  };
+
+  \node[encoderbox, right=1.6cm of audioIn] (wav2vec) {
+    \textbf{Wav2Vec 2.0}\\
+    \tiny (frozen, 94M params)\\
+    \tiny mean-pool $\in \mathbb{R}^{768}$
+  };
+
+  \node[encoderbox, right=1.6cm of videoIn] (resnet) {
+    \textbf{ResNet-50}\\
+    \tiny (frozen, 25M params)\\
+    \tiny GAP $\in \mathbb{R}^{2048}$
+  };
+
+  % ===== PROJECTION HEADS =====
+  \node[stagebox, right=1.4cm of bert, minimum width=3cm] (textproj) {
+    \textbf{Text Proj}\\
+    \tiny Linear(768$\to$512)\\
+    \tiny GELU, LayerNorm, L2
+  };
+
+  \node[stagebox, right=1.4cm of wav2vec, minimum width=3cm] (audioproj) {
+    \textbf{Audio Proj}\\
+    \tiny Linear(768$\to$512)\\
+    \tiny GELU, LayerNorm, L2
+  };
+
+  \node[stagebox, right=1.4cm of resnet, minimum width=3cm] (videoproj) {
+    \textbf{Video Proj}\\
+    \tiny Linear(2048$\to$512)\\
+    \tiny GELU, LayerNorm, L2
+  };
+
+  % ===== CACHE =====
+  \node[databox, right=1.3cm of textproj] (cache) {
+    \textbf{Embedding Cache}\\
+    \tiny $\mathbf{e}_{text}, \mathbf{e}_{audio}, \mathbf{e}_{video}$\\
+    \tiny $\in \mathbb{R}^{512}$ each\\
+    \tiny saved as \texttt{.pt} file
+  };
+
+  % ===== STACK & POS ENC =====
+  \node[fusionbox, right=1.3cm of cache] (stack) {
+    \textbf{Stack + Positional Enc.}\\
+    \tiny $X = [\mathbf{e}_T; \mathbf{e}_A; \mathbf{e}_V] + P$\\
+    \tiny $X \in \mathbb{R}^{B \times 3 \times 512}$
+  };
+
+  % ===== TRANSFORMER =====
+  \node[fusionbox, below=1.1cm of stack, minimum height=1.5cm, text width=4.5cm] (transformer) {
+    \textbf{Transformer Encoder}\\
+    \tiny $L=2$ layers, $h=8$ heads, Pre-LN\\
+    \tiny $\text{Attn}(Q,K,V) = \text{softmax}\!\left(\tfrac{QK^\top}{\sqrt{64}}\right)V$\\
+    \tiny $3\times3$ attention $\to \mathbb{R}^{B\times3\times512}$
+  };
+
+  % ===== POOL + HEAD =====
+  \node[fusionbox, below=1.1cm of transformer] (meanpool) {
+    \textbf{Mean-Pool + Regression Head}\\
+    \tiny $\bar{\mathbf{x}} = \frac{1}{3}\sum_{m} X_m \in \mathbb{R}^{B\times512}$\\
+    \tiny Linear(512$\to$256) $\to$ GELU $\to$ Linear(256$\to$1)
+  };
+
+  % ===== LOSS =====
+  \node[lossbox, left=2cm of meanpool] (loss) {
+    \textbf{Multi-Task Loss}\\
+    \tiny $\mathcal{L} = 0.6\,\mathcal{L}_{MSE} + 0.4\,\mathcal{L}_{BCE}$\\
+    \tiny AdamW + Cosine Warmup LR
+  };
+
+  % ===== METRICS =====
+  \node[outputbox, below=1.1cm of meanpool] (metrics) {
+    \textbf{Evaluation}\\
+    \tiny MAE, Pearson $r$, Acc-2, Weighted F1
+  };
+
+  % ===== INFERENCE =====
+  \node[outputbox, right=2cm of metrics] (inference) {
+    \textbf{MultimodalFusionDetector}\\
+    \tiny score $\in [-3,3]$\\
+    \tiny 7-class label + Groq instruction
+  };
+
+  % ===== SAVE =====
+  \node[databox, left=2cm of metrics] (save) {
+    \textbf{Save Outputs}\\
+    \tiny \texttt{fusion\_model.pth}\\
+    \tiny \texttt{config\_pipelineE.json}
+  };
+
+  % ===== ARROWS =====
+  \draw[thickarrow] (textIn) -- (bert);
+  \draw[thickarrow] (audioIn) -- (wav2vec);
+  \draw[thickarrow] (videoIn) -- (resnet);
+
+  \draw[bluearrow] (bert) -- (textproj);
+  \draw[bluearrow] (wav2vec) -- (audioproj);
+  \draw[bluearrow] (resnet) -- (videoproj);
+
+  \draw[greenarrow] (textproj) -- (cache);
+  \draw[greenarrow] (audioproj) -- (cache);
+  \draw[greenarrow] (videoproj) -- (cache);
+
+  \draw[thickarrow] (cache) -- (stack);
+  \draw[thickarrow] (stack) -- (transformer);
+  \draw[thickarrow] (transformer) -- (meanpool);
+
+  \draw[redarrow] (meanpool) -- (loss);
+  \draw[dashedarrow] (loss.east) to[bend left=30] node[above, font=\tiny] {backprop} (transformer.west);
+
+  \draw[thickarrow] (meanpool) -- (metrics);
+  \draw[arrow] (meanpool) -- (save);
+  \draw[arrow] (metrics) -- (inference);
+
+  % ===== BACKGROUND CONTAINERS =====
+  \begin{pgfonlayer}{background}
+    \node[rectangle, draw=encodercolor!60, fill=encodercolor!5, thick, rounded corners,
+          fit=(bert)(wav2vec)(resnet)(textproj)(audioproj)(videoproj),
+          inner sep=8pt, label={[font=\tiny\color{encodercolor}]above:Frozen Pre-trained Encoders + Projection Heads}] {};
+    \node[rectangle, draw=fusioncolor!60, fill=fusioncolor!5, thick, rounded corners,
+          fit=(stack)(transformer)(meanpool),
+          inner sep=8pt, label={[font=\tiny\color{fusioncolor}]above:Trainable Fusion Transformer (4.34M params)}] {};
+  \end{pgfonlayer}
+
+\end{tikzpicture}
+}
+\caption{Complete Pipeline E architecture: from raw CMU-MOSI inputs through frozen encoders, embedding cache, cross-modal Transformer fusion, to inference output.}
+\label{fig:pipeline_flowchart}
+\end{figure}
+
+%======================================================================
+\section{Label Derivation: TextBlob Pseudo-Labelling}
+%======================================================================
+
+\subsection{Technical Description}
+
+Because the CMU-MOSI gold-annotated \texttt{.pkl} file requires a research access agreement, Pipeline E derives \emph{pseudo-labels} from the raw transcript text using TextBlob's rule-based sentiment analysis.
+
+\begin{definition}[TextBlob Polarity]
+TextBlob's polarity function $p: \mathcal{S} \to [-1, +1]$ maps a string $s$ to a sentiment score by lexicon lookup and rule composition over the constituent words.
+\end{definition}
+
+\begin{definition}[CMU-MOSI Pseudo-Label]
+Given transcript text $s_i$ for segment $i$, the continuous pseudo-label is:
+$$y_i = \text{clip}\!\left(p(s_i) \times 3,\; -3,\; +3\right)$$
+and the binary pseudo-label is:
+$$b_i = \mathbf{1}[y_i > 0]$$
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{\textsc{BuildSamples} — Construct CMU-MOSI Sample List}
+\label{alg:build_samples}
+\begin{algorithmic}[1]
+\Require \textsc{TranscriptDir}, \textsc{AudioDir}, \textsc{VideoDir}, split sets $\mathcal{T}, \mathcal{V}, \mathcal{E}$
+\Ensure List of sample dictionaries $\mathcal{D}$
+\State $\mathcal{D} \gets []$
+\For{each \texttt{.annotprocessed} file $f$ in \textsc{TranscriptDir}}
+  \State $\text{vid\_id} \gets$ filename of $f$ (without extension)
+  \State $\text{split} \gets$ \textbf{lookup}$(\text{vid\_id},\; \mathcal{T} \cup \mathcal{V} \cup \mathcal{E})$
+  \For{each line $\ell$ in $f$}
+    \State $(\text{seg\_num},\, \text{text}) \gets$ \textbf{parse}($\ell$, delimiter=\texttt{DELIMITER})
+    \State $y \gets \text{clip}(\text{TextBlob}(\text{text}).\text{polarity} \times 3,\; -3,\; +3)$
+    \State $b \gets \mathbf{1}[y > 0]$
+    \State $\text{wav} \gets \textsc{AudioDir} / \text{vid\_id}\_\text{seg\_num}\texttt{.wav}$
+    \State $\text{mp4} \gets \textsc{VideoDir} / \text{vid\_id}\_\text{seg\_num}\texttt{.mp4}$
+    \State $\mathcal{D}$\textbf{.append}$\!\left(\{\text{vid\_id}, \text{seg\_num}, \text{text}, y, b, \text{split}, \text{wav}, \text{mp4}\}\right)$
+  \EndFor
+\EndFor
+\State \Return $\mathcal{D}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{laymanbox}
+Imagine reading 2,199 movie subtitle lines and giving each one a star rating based solely on the words. TextBlob does exactly this: it has a dictionary of words with sentiment scores, reads each line, and estimates how positive or negative it is. The score is then stretched to match the official $[-3, +3]$ scale used by professional human annotators.
+
+This approach has a trade-off: it is fast and requires no hand-labelled data, but it misses sarcasm, context, and tone — which real human annotators capture. The binary accuracy of Pipeline E being lower than published methods (69\% vs 81\%) is largely explained by this pseudo-label noise.
+\end{laymanbox}
+
+%======================================================================
+\section{Frozen Pre-trained Encoders}
+%======================================================================
+
+\subsection{Architecture Overview}
+
+All three modality encoders share the same two-stage pipeline: \textbf{(1)} a frozen pre-trained backbone extracts a raw embedding, and \textbf{(2)} a trainable projection MLP maps it to the shared 512-dimensional space with L2 normalisation.
+
+\begin{axiom}[Shared Embedding Dimensionality]
+All three modality embeddings are projected to the same dimensionality $d = 512$ before fusion. This ensures the Transformer encoder treats all modalities symmetrically and allows direct comparison via inner products.
+\end{axiom}
+
+\subsection{Text Encoder: BERT}
+
+\begin{theorem}[BERT CLS Representation]
+For input text $s$, the BERT encoder $f_{BERT}$ produces a hidden-state matrix $H \in \mathbb{R}^{L \times 768}$. The [CLS] token at position 0,
+$$\mathbf{h}_{CLS} = H[0, :] \in \mathbb{R}^{768},$$
+aggregates sentence-level semantics through the full self-attention stack and serves as the sentence embedding.
+\end{theorem}
+
+\begin{algorithm}[H]
+\caption{\textsc{EncodeText} — BERT CLS Embedding}
+\label{alg:enc_text}
+\begin{algorithmic}[1]
+\Require Raw text string $s$, frozen BERT model, TextProjection $g_\phi$
+\Ensure L2-normalised text embedding $\hat{\mathbf{e}}_T \in \mathbb{R}^{512}$
+\State $(\mathbf{ids}, \mathbf{mask}) \gets \text{BertTokenizer}(s,\; \text{max\_length}=64,\; \text{padding/truncation})$
+\State $H \gets \text{BERT}(\mathbf{ids}, \mathbf{mask}).\text{last\_hidden\_state} \in \mathbb{R}^{1 \times 64 \times 768}$
+\State $\mathbf{h}_{CLS} \gets H[:,\,0,:] \in \mathbb{R}^{768}$ \Comment{Extract [CLS] token}
+\State $\mathbf{e}_T \gets g_\phi(\mathbf{h}_{CLS})$ \Comment{TextProjection MLP}
+\State $\hat{\mathbf{e}}_T \gets \mathbf{e}_T / \|\mathbf{e}_T\|_2$ \Comment{L2 normalisation}
+\State \Return $\hat{\mathbf{e}}_T$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Audio Encoder: Wav2Vec 2.0}
+
+\begin{theorem}[Temporal Mean-Pooling]
+Given Wav2Vec 2.0 hidden states $\{{\mathbf{h}_t}\}_{t=1}^{T} \in \mathbb{R}^{768}$ for a variable-length audio segment, the mean-pooled representation
+$$\mathbf{h}_{audio} = \frac{1}{T}\sum_{t=1}^{T} \mathbf{h}_t \in \mathbb{R}^{768}$$
+is a fixed-size summary that is permutation-sensitive (average changes with $T$) and collapses the time dimension.
+\end{theorem}
+
+\begin{algorithm}[H]
+\caption{\textsc{EncodeAudio} — Wav2Vec 2.0 Mean-Pool Embedding}
+\label{alg:enc_audio}
+\begin{algorithmic}[1]
+\Require WAV file path, frozen Wav2Vec 2.0 model, AudioProjection $g_\psi$
+\Ensure L2-normalised audio embedding $\hat{\mathbf{e}}_A \in \mathbb{R}^{512}$
+\If{file exists}
+  \State Load waveform $w$; resample to 16\,kHz if needed; convert to mono
+  \State $\mathbf{x} \gets \text{Wav2VecProcessor}(w,\; \text{return\_tensors}=\texttt{pt})$
+  \State $H \gets \text{Wav2Vec2Model}(\mathbf{x}).\text{last\_hidden\_state} \in \mathbb{R}^{1 \times T \times 768}$
+  \State $\mathbf{h} \gets H.\text{mean}(\text{dim}=1) \in \mathbb{R}^{1 \times 768}$
+\Else
+  \State $w \gets \mathbf{0}_{16000}$ \Comment{1-second silence fallback}
+  \State Repeat steps 2--5
+\EndIf
+\State $\mathbf{e}_A \gets g_\psi(\mathbf{h})$
+\State $\hat{\mathbf{e}}_A \gets \mathbf{e}_A / \|\mathbf{e}_A\|_2$
+\State \Return $\hat{\mathbf{e}}_A$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Video Encoder: ResNet-50 Middle-Frame}
+
+\begin{definition}[Middle-Frame Heuristic]
+For a video of $N$ frames, the representative frame index is:
+$$f^* = \left\lfloor N/2 \right\rfloor$$
+This heuristic assumes the middle frame captures the speaker's primary expression for the utterance. It avoids the cost of processing all frames while preserving appearance information.
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{\textsc{EncodeVideo} — ResNet-50 Middle-Frame Embedding}
+\label{alg:enc_video}
+\begin{algorithmic}[1]
+\Require MP4 file path, frozen ResNet-50 backbone $r_\xi$, VideoFrameProjection $g_\rho$
+\Ensure L2-normalised video embedding $\hat{\mathbf{e}}_V \in \mathbb{R}^{512}$
+\State Open video; $N \gets$ total frame count
+\State Seek to frame $f^* = \lfloor N/2 \rfloor$
+\State Read frame $\mathbf{F} \in \mathbb{R}^{H \times W \times 3}$ (BGR); convert to RGB
+\State $\mathbf{x} \gets \text{Resize}(224,224) \to \text{ToTensor} \to \text{Normalize}(\boldsymbol{\mu}_{IN}, \boldsymbol{\sigma}_{IN})$
+\State $\mathbf{h} \gets r_\xi(\mathbf{x}) \in \mathbb{R}^{2048}$ \Comment{GAP output, FC layer removed}
+\State $\mathbf{e}_V \gets g_\rho(\mathbf{h})$
+\State $\hat{\mathbf{e}}_V \gets \mathbf{e}_V / \|\mathbf{e}_V\|_2$
+\State \Return $\hat{\mathbf{e}}_V$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Shared Projection MLP Structure}
+
+All three projection heads use the identical architecture:
+\begin{equation}
+\mathbf{e} = \text{L2Norm}\!\left(W_2 \cdot \text{LayerNorm}\!\left(\text{GELU}\!\left(W_1 \mathbf{h}\right)\right)\right)
+\end{equation}
+
+\begin{lemma}[L2 Normalisation Maps to Unit Hypersphere]
+After L2 normalisation, $\hat{\mathbf{e}} = \mathbf{e}/\|\mathbf{e}\|_2$, all embeddings satisfy $\|\hat{\mathbf{e}}\|_2 = 1$, i.e.\ they lie on the unit hypersphere $\mathbb{S}^{d-1} \subset \mathbb{R}^d$. The inner product of two such vectors equals their cosine similarity:
+$$\hat{\mathbf{e}}_i^\top \hat{\mathbf{e}}_j = \cos(\theta_{ij})$$
+making the space \textbf{scale-invariant} and allowing the Transformer to compare modalities purely by directional alignment.
+\end{lemma}
+
+\begin{lemma}[Parameter Freezing Prevents Catastrophic Forgetting]
+Setting \texttt{requires\_grad = False} for all encoder parameters ensures the pre-trained representations $f_{BERT}$, $f_{W2V}$, $f_{R50}$ are unchanged by backpropagation through the fusion model. This reduces the optimised parameter count from ${\sim}229$M to ${\sim}4.34$M — a 98.1\% reduction — and preserves the broad language/audio/vision knowledge encoded during pre-training.
+\end{lemma}
+
+\begin{laymanbox}
+Think of the three encoders as expert witnesses in a courtroom — a linguist (BERT), a musicologist (Wav2Vec), and a photographer (ResNet). Each is a certified expert who has spent years studying their domain. We do not re-train them; we only hire a small team of translators (the projection MLPs) to convert each expert's specialised report into a standard 512-word summary sheet. L2 normalisation ensures all three summary sheets are the same \emph{size} so they can be fairly compared — like printing them all on identical A4 paper regardless of how verbose the original report was.
+\end{laymanbox}
+
+%======================================================================
+\section{Feature Extraction Cache}
+%======================================================================
+
+\begin{algorithm}[H]
+\caption{\textsc{ExtractAndCacheEmbeddings} — One-Time Feature Extraction}
+\label{alg:cache}
+\begin{algorithmic}[1]
+\Require Sample list $\mathcal{D}$, encoders, output path $\mathcal{P}$
+\Ensure Embedding cache $\mathcal{C}$: segment\_id $\mapsto$ $\{\mathbf{e}_T, \mathbf{e}_A, \mathbf{e}_V, y, b, \text{split}\}$
+\If{$\mathcal{P}$ exists \textbf{and} $|\mathcal{C}| > 100$}
+  \State Load $\mathcal{C}$ from disk; \Return $\mathcal{C}$ \Comment{Skip re-extraction}
+\EndIf
+\State $\mathcal{C} \gets \{\}$
+\For{each sample $s \in \mathcal{D}$}
+  \State $\mathbf{e}_T \gets \textsc{EncodeText}(s.\text{text})$
+  \State $\mathbf{e}_A \gets \textsc{EncodeAudio}(s.\text{wav\_path})$
+  \State $\mathbf{e}_V \gets \textsc{EncodeVideo}(s.\text{mp4\_path})$
+  \State $\mathcal{C}[s.\text{seg\_id}] \gets \{\mathbf{e}_T, \mathbf{e}_A, \mathbf{e}_V,\; s.y,\; s.b,\; s.\text{split}\}$
+\EndFor
+\State \textbf{torch.save}($\mathcal{C}$, $\mathcal{P}$)
+\State \Return $\mathcal{C}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{laymanbox}
+Running three large AI models on 2,199 video clips takes about 25 minutes. This cell does all that work \emph{exactly once}, saves the results as a file, and from that point forward loads the pre-computed numbers instantly. It is like doing all your meal prep on Sunday so weeknight cooking takes 5 minutes instead of an hour.
+\end{laymanbox}
+
+%======================================================================
+\section{MultimodalFusionTransformer: Core Model}
+%======================================================================
+
+\subsection{Architecture}
+
+\begin{definition}[MultimodalFusionTransformer]
+The fusion model $\pi_\theta: \mathbb{R}^{512} \times \mathbb{R}^{512} \times \mathbb{R}^{512} \to \mathbb{R}$ takes three normalised embeddings as input and produces a scalar sentiment score. It consists of:
+\begin{enumerate}[nosep]
+  \item Learnable positional encodings $P \in \mathbb{R}^{3 \times 512}$
+  \item A $L=2$-layer Pre-LN Transformer encoder with $h=8$ attention heads and $d_{ff}=1024$
+  \item Mean-pooling over the 3 modality tokens
+  \item A 2-layer regression head: Linear(512$\to$256) $\to$ GELU $\to$ Dropout(0.1) $\to$ Linear(256$\to$1)
+\end{enumerate}
+\end{definition}
+
+\subsection{Self-Attention Mechanism}
+
+\begin{theorem}[Scaled Dot-Product Attention]
+Given query $Q \in \mathbb{R}^{n \times d_k}$, key $K \in \mathbb{R}^{n \times d_k}$, value $V \in \mathbb{R}^{n \times d_v}$, scaled dot-product attention is:
+$$\text{Attn}(Q, K, V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}}\right) V$$
+The $1/\sqrt{d_k}$ scaling prevents the dot products from growing large in magnitude, which would push the softmax into saturation regions with near-zero gradients.
+\end{theorem}
+
+In Pipeline E, with 3 modality tokens and $h=8$ heads, each head operates on $d_k = 512/8 = 64$ dimensions and produces a $3 \times 3$ attention matrix. This means every modality can directly attend to every other modality.
+
+\begin{theorem}[Multi-Head Attention]
+Multi-head attention with $h$ heads projects $Q, K, V$ into $h$ subspaces and concatenates the results:
+$$\text{MHA}(Q,K,V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h)W^O$$
+$$\text{head}_i = \text{Attn}(QW_i^Q,\; KW_i^K,\; VW_i^V)$$
+Different heads can specialise in different cross-modal relationships (e.g., one head may learn audio-text alignment while another learns video-text alignment).
+\end{theorem}
+
+\subsection{Pre-Layer Normalisation (Pre-LN)}
+
+\begin{axiom}[Pre-LN Stability]
+In the Pre-LN architecture (\texttt{norm\_first=True}), layer normalisation is applied \emph{before} the attention and feed-forward sublayers:
+$$\mathbf{x}' = \mathbf{x} + \text{Attn}(\text{LN}(\mathbf{x})), \quad \mathbf{x}'' = \mathbf{x}' + \text{FFN}(\text{LN}(\mathbf{x}'))$$
+Pre-LN provides more stable gradients during early training compared to Post-LN because the residual pathway preserves gradient magnitude through the network depth.
+\end{axiom}
+
+\subsection{Learnable Positional Encodings}
+
+\begin{definition}[Learnable Modality Tags]
+The positional encoding $P \in \mathbb{R}^{3 \times 512}$ is initialised as:
+$$P \sim \mathcal{N}(0, 0.02^2 I)$$
+and learned end-to-end. With only 3 positions (text=0, audio=1, video=2), each row of $P$ becomes a learned ``modality tag'' that tells the Transformer which modality each token represents.
+\end{definition}
+
+\subsection{Xavier Weight Initialisation}
+
+\begin{theorem}[Xavier Uniform Initialisation]
+All linear layers in the fusion model are initialised with Xavier uniform:
+$$W \sim \mathcal{U}\!\left(-\sqrt{\frac{6}{n_{in}+n_{out}}},\; \sqrt{\frac{6}{n_{in}+n_{out}}}\right)$$
+This initialisation keeps the variance of activations and gradients approximately constant across layers at initialisation, reducing the risk of vanishing or exploding gradients before any training data is seen.
+\end{theorem}
+
+\begin{algorithm}[H]
+\caption{\textsc{MultimodalFusionTransformer.forward} — Forward Pass}
+\label{alg:forward}
+\begin{algorithmic}[1]
+\Require $\mathbf{e}_T, \mathbf{e}_A, \mathbf{e}_V \in \mathbb{R}^{B \times 512}$, parameters $\theta$
+\Ensure Sentiment scores $\hat{\mathbf{y}} \in \mathbb{R}^B$
+\State $X \gets \text{stack}([\mathbf{e}_T, \mathbf{e}_A, \mathbf{e}_V],\; \text{dim}=1) \in \mathbb{R}^{B \times 3 \times 512}$
+\State $X \gets X + P$ \Comment{Add learnable positional encodings $P \in \mathbb{R}^{3 \times 512}$}
+\For{$\ell = 1$ to $L=2$}
+  \State $X \gets X + \text{MHA}(\text{LN}(X))$ \Comment{Pre-LN self-attention residual}
+  \State $X \gets X + \text{FFN}(\text{LN}(X))$ \Comment{Pre-LN feed-forward residual}
+\EndFor
+\State $\bar{\mathbf{x}} \gets X.\text{mean}(\text{dim}=1) \in \mathbb{R}^{B \times 512}$ \Comment{Mean-pool over 3 tokens}
+\State $\mathbf{z} \gets \text{GELU}(W_1 \bar{\mathbf{x}} + b_1) \in \mathbb{R}^{B \times 256}$
+\State $\mathbf{z} \gets \text{Dropout}(\mathbf{z},\; p=0.1)$
+\State $\hat{\mathbf{y}} \gets W_2 \mathbf{z} + b_2 \in \mathbb{R}^{B}$ \Comment{Raw sentiment logit}
+\State \Return $\hat{\mathbf{y}}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{laymanbox}
+After the three specialists (text, audio, video) each produce a 512-number report, the fusion model holds a \emph{team meeting}. Each report can ``look at'' the other two using self-attention — like committee members reading each other's memos and updating their views. For example, if the audio sounds sarcastic, the audio representative can tell the text representative to lower its confidence in the positive words. After two rounds of discussion (2 Transformer layers), all three views are averaged, and the result is converted to a single sentiment score between $-3$ and $+3$.
+\end{laymanbox}
+
+%======================================================================
+\section{Multi-Task Loss Function}
+%======================================================================
+
+\subsection{Formulation}
+
+\begin{definition}[Multi-Task Sentiment Loss]
+Pipeline E jointly optimises regression and binary classification:
+$$\mathcal{L}(\hat{y}, y, b) = \alpha \cdot \mathcal{L}_{MSE}(\hat{y}, y) + \beta \cdot \mathcal{L}_{BCE}(\hat{y}, b)$$
+where $\alpha = 0.6$, $\beta = 0.4$, and:
+\begin{align}
+\mathcal{L}_{MSE} &= \frac{1}{B}\sum_{i=1}^{B}\left(\hat{y}_i - y_i\right)^2 \\
+\mathcal{L}_{BCE} &= -\frac{1}{B}\sum_{i=1}^{B}\left[b_i \log \sigma(\hat{y}_i) + (1-b_i)\log(1-\sigma(\hat{y}_i))\right]
+\end{align}
+Note: BCE is applied to the raw logit $\hat{y}$ via \texttt{binary\_cross\_entropy\_with\_logits}, which is numerically more stable than explicitly computing $\sigma(\hat{y})$ first.
+\end{definition}
+
+\begin{theorem}[Numerical Stability of Logit BCE]
+For $\hat{y} \in \mathbb{R}$, the stable form of binary cross-entropy with logits is:
+$$\mathcal{L}_{BCE}(\hat{y}, b) = \max(0,\hat{y}) - b\hat{y} + \log(1 + e^{-|\hat{y}|})$$
+This avoids overflow in $e^{\hat{y}}$ for large positive $\hat{y}$ and underflow in $\log(e^{-\hat{y}})$ for large negative $\hat{y}$.
+\end{theorem}
+
+\begin{laymanbox}
+The model is given two homework assignments at once: (1) predict a score as close as possible to the true number (MSE — like estimating a temperature), and (2) correctly classify whether the sentiment is positive or negative (BCE — like a true/false question). The total grade is 60\% of the number task plus 40\% of the true/false task. Training the two jointly means the model never optimises one at the complete expense of the other.
+\end{laymanbox}
+
+%======================================================================
+\section{Optimiser \& Learning Rate Schedule}
+%======================================================================
+
+\subsection{AdamW Optimiser}
+
+\begin{theorem}[AdamW Update Rule]
+AdamW decouples weight decay from the adaptive gradient estimate. The update at step $t$ is:
+\begin{align}
+m_t &= \beta_1 m_{t-1} + (1-\beta_1) g_t \quad (\text{first moment}) \\
+v_t &= \beta_2 v_{t-1} + (1-\beta_2) g_t^2 \quad (\text{second moment}) \\
+\hat{m}_t &= m_t / (1-\beta_1^t), \quad \hat{v}_t = v_t / (1-\beta_2^t) \quad (\text{bias correction}) \\
+\theta_{t+1} &= \theta_t - \eta\left(\frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} + \lambda \theta_t\right)
+\end{align}
+with $\beta_1=0.9$, $\beta_2=0.999$, $\epsilon=10^{-8}$, $\lambda=0.01$ (weight decay).
+\end{theorem}
+
+\begin{lemma}[Why AdamW over Adam]
+Standard Adam with L2 regularisation adds $\lambda \nabla \|\theta\|_2^2 = 2\lambda\theta$ to the gradient before the adaptive scaling, which effectively divides the weight decay by $\sqrt{\hat{v}_t}$ and diminishes regularisation for parameters with large gradient variance. AdamW applies weight decay \emph{after} the adaptive step, ensuring the true $\ell_2$ penalty is applied uniformly.
+\end{lemma}
+
+\subsection{Cosine Annealing with Linear Warmup}
+
+\begin{definition}[Warmup-Cosine Learning Rate Schedule]
+With $T_{total} = 940$ steps and $T_{warm} = 94$ (first 10\%):
+$$\eta(t) = \begin{cases}
+\eta_{max} \cdot \dfrac{t}{T_{warm}} & t < T_{warm} \\[6pt]
+\dfrac{\eta_{max}}{2}\!\left(1 + \cos\!\left(\pi \cdot \dfrac{t - T_{warm}}{T_{total} - T_{warm}}\right)\right) & t \geq T_{warm}
+\end{cases}$$
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{\textsc{TrainEpoch} — Single Training Epoch}
+\label{alg:train_epoch}
+\begin{algorithmic}[1]
+\Require Epoch index $e$, train loader, model $\pi_\theta$, optimiser, scheduler
+\Ensure Mean training loss $\bar{\mathcal{L}}$
+\State $\pi_\theta.\text{train}()$ \Comment{Enable dropout}
+\State $\text{losses} \gets []$
+\For{each batch $(T, A, V, \mathbf{y}, \mathbf{b})$ in train\_loader}
+  \State $\hat{\mathbf{y}} \gets \pi_\theta(T, A, V)$ \Comment{Forward pass}
+  \State $\mathcal{L}, \mathcal{L}_{MSE}, \mathcal{L}_{BCE} \gets \textsc{MultitaskLoss}(\hat{\mathbf{y}}, \mathbf{y}, \mathbf{b})$
+  \State optimiser$.\text{zero\_grad}()$
+  \State $\mathcal{L}.\text{backward}()$ \Comment{Compute $\partial\mathcal{L}/\partial\theta$ for all $\theta$}
+  \State \textbf{clip\_grad\_norm}$(\theta,\; c=1.0)$ \Comment{Gradient clipping}
+  \State optimiser$.step()$
+  \State scheduler$.step()$
+  \State $\text{losses}.\text{append}(\mathcal{L}.\text{item}())$
+\EndFor
+\State \Return $\text{mean}(\text{losses})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Gradient Clipping}
+
+\begin{definition}[Global Gradient Norm Clipping]
+Let $g = \nabla_\theta \mathcal{L}$ be the concatenated gradient vector. Gradient clipping scales $g$ if its $\ell_2$ norm exceeds threshold $c$:
+$$g_{clipped} = \frac{g}{\max\!\left(1,\; \|g\|_2 / c\right)}, \quad c = 1.0$$
+\end{definition}
+
+\begin{lemma}[Gradient Clipping Prevents Explosion]
+For Transformer architectures, large gradients can arise from attention weights saturating the softmax. Gradient clipping acts as a safety valve: the direction of the gradient is preserved, but its magnitude is bounded, ensuring parameter updates remain within a stable regime during early training.
+\end{lemma}
+
+\begin{laymanbox}
+The optimiser (AdamW) is like a smart GPS navigator for the model. It tracks how much each parameter has been moving (using running averages) and adjusts step sizes accordingly — small steps for parameters that have been changing rapidly, bigger steps for ones that haven't moved much. The learning rate schedule starts slowly (warmup for 94 steps) to avoid crashing at the start, then gradually reduces the step size over 940 total steps. Gradient clipping is the seatbelt: if the model tries to take a wild leap, it is automatically limited to a safe maximum jump.
+\end{laymanbox}
+
+%======================================================================
+\section{Best Model Selection \& Checkpointing}
+%======================================================================
+
+\begin{algorithm}[H]
+\caption{\textsc{FullTrainingLoop} — 20 Epochs with Best-Model Tracking}
+\label{alg:training_loop}
+\begin{algorithmic}[1]
+\Require Model $\pi_\theta$, train/valid loaders, optimiser, scheduler, $E=20$
+\Ensure Best model state $\theta^*$
+\State $\text{best\_mae} \gets \infty$; $\theta^* \gets \text{None}$
+\For{$e = 0$ to $E-1$}
+  \State $\bar{\mathcal{L}}_{train} \gets \textsc{TrainEpoch}(e)$
+  \State $(\mathcal{L}_{val}, \text{MAE}_{val}, \ldots) \gets \textsc{Evaluate}(\text{valid\_loader})$
+  \If{$\text{MAE}_{val} < \text{best\_mae}$}
+    \State $\text{best\_mae} \gets \text{MAE}_{val}$; $\text{best\_epoch} \gets e$
+    \State $\theta^* \gets \{k: v.\text{clone}() \text{ for } k,v \text{ in } \pi_\theta.\text{state\_dict}()\}$
+    \Comment{Deep copy}
+  \EndIf
+  \State \textbf{torch.save}(checkpoint, path) \Comment{Save for resumption}
+\EndFor
+\State \Return $\theta^*$ \Comment{Best weights: epoch 17, val\_MAE $=0.7238$}
+\end{algorithmic}
+\end{algorithm}
+
+\begin{remark}
+The best state is cloned with \texttt{v.clone()} rather than a reference. This ensures that continued training after the best epoch does not overwrite $\theta^*$ in memory.
+\end{remark}
+
+%======================================================================
+\section{Evaluation Metrics}
+%======================================================================
+
+\begin{definition}[CMU-MOSI Evaluation Suite]
+The standard four metrics used in Pipeline E are:
+
+\textbf{Mean Absolute Error (MAE):}
+$$\text{MAE} = \frac{1}{N}\sum_{i=1}^{N}|\hat{y}_i - y_i| \in [0, 6]$$
+
+\textbf{Pearson Correlation:}
+$$r = \frac{\sum_i (\hat{y}_i - \bar{\hat{y}})(y_i - \bar{y})}{\sqrt{\sum_i (\hat{y}_i - \bar{\hat{y}})^2 \cdot \sum_i (y_i - \bar{y})^2}} \in [-1, 1]$$
+
+\textbf{Binary Accuracy (Acc-2):}
+$$\text{Acc}_2 = \frac{1}{N}\sum_{i=1}^N \mathbf{1}[\text{sign}(\hat{y}_i) = \text{sign}(y_i)]$$
+
+\textbf{Weighted F1:}
+$$F_{1,w} = \sum_{c \in \{0,1\}} \frac{n_c}{N} \cdot \frac{2 P_c R_c}{P_c + R_c}$$
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{\textsc{Evaluate} — Compute All CMU-MOSI Metrics}
+\label{alg:evaluate}
+\begin{algorithmic}[1]
+\Require Data loader, model $\pi_\theta$
+\Ensure MAE, Pearson $r$, Acc-2, Weighted F1, Total loss
+\State $\pi_\theta.\text{eval}()$ \Comment{Disable dropout}
+\State $\hat{Y}, Y, B \gets [], [], []$
+\State \textbf{with} $\nabla$\textbf{.no\_grad():} \Comment{Disable autograd}
+\For{each batch $(T, A, V, \mathbf{y}, \mathbf{b})$}
+  \State $\hat{\mathbf{y}} \gets \pi_\theta(T, A, V)$
+  \State Append $\hat{\mathbf{y}}$ to $\hat{Y}$; append $\mathbf{y}$ to $Y$; append $\mathbf{b}$ to $B$
+\EndFor
+\State $\text{MAE} \gets \text{mean}(|\hat{Y} - Y|)$
+\State $r \gets \text{pearsonr}(\hat{Y}, Y)$
+\State $\hat{B} \gets \mathbf{1}[\hat{Y} > 0]$
+\State $\text{Acc}_2 \gets \text{accuracy\_score}(B, \hat{B})$
+\State $F_{1,w} \gets \text{f1\_score}(B, \hat{B},\; \text{average=`weighted'})$
+\State \Return $(\text{MAE}, r, \text{Acc}_2, F_{1,w})$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Benchmark Comparison}
+
+\begin{center}
+\begin{tabular}{lccl}
+\toprule
+\textbf{System} & \textbf{MAE}$\downarrow$ & \textbf{Acc-2}$\uparrow$ & \textbf{Architecture} \\
+\midrule
+Random baseline & $\approx 1.80$ & $\approx 50\%$ & — \\
+EF-LSTM & 1.090 & 78.5\% & Early-fusion LSTM \\
+MulT (Tsai 2019) & 0.871 & 81.5\% & Cross-modal Transformer \\
+MISA (Hazarika 2020) & 0.783 & 81.8\% & Modality-invariant subspaces \\
+\midrule
+\textbf{Pipeline E (ours)} & \textbf{0.766} & \textbf{69.0\%} & Frozen encoders + fusion Transformer \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{remark}
+Pipeline E achieves a lower MAE than the 2020 SOTA (MISA) despite using pseudo-labels, but Acc-2 is 12.8 percentage points lower. This divergence indicates the regression task benefits from the rich frozen representations, while the binary boundary is degraded by TextBlob label noise.
+\end{remark}
+
+\begin{laymanbox}
+Four different rulers measure how good the model is:
+\begin{itemize}[nosep]
+  \item \textbf{MAE}: on average, how many points off is the model's predicted score? (Lower is better; 0.766 means about 0.766 points off on a $[-3,+3]$ scale)
+  \item \textbf{Pearson $r$}: does the model rank clips in the right order of positivity? (1.0 is perfect, 0.0 is random)
+  \item \textbf{Acc-2}: how often does it correctly call a clip positive vs. negative? (69\% — better than random 50\% but worse than human-labelled methods)
+  \item \textbf{F1}: a balanced accuracy measure accounting for class imbalance
+\end{itemize}
+\end{laymanbox}
+
+%======================================================================
+\section{Inference Wrapper: MultimodalFusionDetector}
+%======================================================================
+
+\subsection{Score-to-Label Mapping}
+
+\begin{theorem}[Monotone Step Classifier]
+The label mapping $\ell: \mathbb{R} \to \mathcal{C}$ defined by:
+\begin{center}
+\begin{tabular}{ll}
+$\hat{y} > 2.0$ & $\to$ \texttt{strongly\_positive} \\
+$\hat{y} > 1.0$ & $\to$ \texttt{positive} \\
+$\hat{y} > 0.1$ & $\to$ \texttt{slightly\_positive} \\
+$\hat{y} > -0.1$ & $\to$ \texttt{neutral} \\
+$\hat{y} > -1.0$ & $\to$ \texttt{slightly\_negative} \\
+$\hat{y} > -2.0$ & $\to$ \texttt{negative} \\
+else & $\to$ \texttt{strongly\_negative}
+\end{tabular}
+\end{center}
+is a monotone non-decreasing step function $f: [-3,3] \to \mathcal{C}$ where $\mathcal{C}$ is an ordered set of 7 sentiment classes. Monotonicity guarantees: if $\hat{y}_1 > \hat{y}_2$ then $\ell(\hat{y}_1) \geq_{\mathcal{C}} \ell(\hat{y}_2)$.
+\end{theorem}
+
+\subsection{Video-Free Fallback}
+
+\begin{definition}[Missing Modality Fallback]
+When video is unavailable, the video embedding is synthesised as the L2-normalised average of text and audio:
+$$\mathbf{e}_V^{fallback} = \text{L2Norm}\!\left(\frac{\mathbf{e}_T + \mathbf{e}_A}{2}\right)$$
+This ensures the Transformer always receives a valid 3-token sequence without architectural changes.
+\end{definition}
+
+\begin{algorithm}[H]
+\caption{\textsc{MultimodalFusionDetector.predict} — Inference}
+\label{alg:inference}
+\begin{algorithmic}[1]
+\Require $\mathbf{e}_T \in \mathbb{R}^{512}$, $\mathbf{e}_A \in \mathbb{R}^{512}$, optional $\mathbf{e}_V \in \mathbb{R}^{512}$
+\Ensure (score, label, groq\_instruction)
+\If{$\mathbf{e}_V$ is \textbf{None}}
+  \State $\mathbf{e}_V \gets \text{L2Norm}((\mathbf{e}_T + \mathbf{e}_A)/2)$ \Comment{Fallback}
+\EndIf
+\State \textbf{with} \texttt{torch.no\_grad():}
+\State \quad $\hat{y} \gets \pi_{\theta^*}(\mathbf{e}_T, \mathbf{e}_A, \mathbf{e}_V).\text{item}()$
+\State $\ell \gets \textsc{LabelFromScore}(\hat{y})$
+\State $g \gets$ construct Groq instruction from $(\hat{y}, \ell)$
+\State \Return $(\hat{y}, \ell, g)$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{laymanbox}
+The detector is the \emph{deployment package} — a clean wrapper that accepts three 512-number summaries and returns: (1) a precise number, (2) a human-readable label like ``slightly positive'', and (3) a hint for the downstream language model on how to adjust its tone. If the video feed is unavailable (e.g., audio-only call), it fills in the missing video slot by averaging the text and audio summaries, so the rest of the pipeline does not need any changes.
+\end{laymanbox}
+
+%======================================================================
+\section{Model Persistence}
+%======================================================================
+
+The following artefacts are saved to Google Drive after training:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{File} & \textbf{Contents} \\
+\midrule
+\texttt{fusion\_model.pth} & Model state dict, all hyperparameters, test metrics \\
+\texttt{config\_pipelineE.json} & Human-readable metadata for reproducibility \\
+\texttt{mosi\_emb\_cache.pt} & Pre-computed 512d embeddings for all 2,199 segments \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%======================================================================
+\section{Training Diagnostics}
+%======================================================================
+
+Three training plots track learning dynamics:
+
+\begin{enumerate}
+  \item \textbf{Multi-task Loss} ($\mathcal{L}_{train}$ and $\mathcal{L}_{valid}$): monotonically decreasing training loss indicates fitting; a large train/valid gap signals overfitting.
+  \item \textbf{Validation MAE}: gold star marks the best epoch (epoch 17, MAE $= 0.7238$); dashed orange line shows the MAE $<1.0$ target.
+  \item \textbf{Validation Acc-2}: green dashed line at 75\% target; red dashed line at 50\% random-chance baseline.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Observation} & \textbf{Diagnosis} \\
+\midrule
+MAE plateaus early & Learning rate may be too low post-warmup \\
+Acc-2 oscillates & Binary pseudo-labels may be noisy \\
+Train loss $\gg$ Valid loss & Underfitting risk \\
+Train loss $\ll$ Valid loss & Overfitting risk \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%======================================================================
+\section{Hyperparameter Summary}
+%======================================================================
+
+\begin{center}
+\begin{tabular}{llcl}
+\toprule
+\textbf{Symbol} & \textbf{Name} & \textbf{Value} & \textbf{Role} \\
+\midrule
+$d$ & EMBED\_DIM & 512 & Shared embedding dimensionality \\
+$h$ & FUSION\_HEADS & 8 & Attention heads ($d_k = 64$) \\
+$L$ & FUSION\_LAYERS & 2 & Transformer encoder depth \\
+$d_{ff}$ & FUSION\_FF\_DIM & 1024 & Feed-forward hidden size \\
+$p$ & DROPOUT & 0.1 & Dropout probability \\
+$E$ & NUM\_EPOCHS & 20 & Training iterations \\
+$B$ & BATCH\_SIZE & 32 & Samples per gradient step \\
+$\eta$ & LR & $10^{-4}$ & Peak learning rate \\
+$\lambda$ & WEIGHT\_DECAY & 0.01 & L2 regularisation (AdamW) \\
+$\alpha$ & ALPHA & 0.6 & MSE loss weight \\
+$\beta$ & BETA & 0.4 & BCE loss weight \\
+— & MAX\_TEXT\_LEN & 64 & BERT tokeniser max length \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%======================================================================
+\section{Complete Algorithm Cross-Reference}
+%======================================================================
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Algorithm} & \textbf{Reference} & \textbf{Notebook Cell} \\
+\midrule
+Build Sample List & Alg.~\ref{alg:build_samples} & Cell 4 \\
+Encode Text (BERT) & Alg.~\ref{alg:enc_text} & Cell 5 \\
+Encode Audio (Wav2Vec) & Alg.~\ref{alg:enc_audio} & Cell 5 \\
+Encode Video (ResNet) & Alg.~\ref{alg:enc_video} & Cell 5 \\
+Extract and Cache Embeddings & Alg.~\ref{alg:cache} & Cell 6 \\
+Fusion Transformer Forward Pass & Alg.~\ref{alg:forward} & Cell 8 \\
+Train Single Epoch & Alg.~\ref{alg:train_epoch} & Cell 11 \\
+Full Training Loop & Alg.~\ref{alg:training_loop} & Cell 11 \\
+Evaluate Metrics & Alg.~\ref{alg:evaluate} & Cell 10 \\
+Inference / Predict & Alg.~\ref{alg:inference} & Cell 15 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+%======================================================================
+\appendix
+\section{Notation Glossary}
+%======================================================================
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$\mathbf{e}_T, \mathbf{e}_A, \mathbf{e}_V \in \mathbb{R}^{512}$ & L2-normalised text, audio, video embeddings \\
+$\hat{\mathbf{e}}$ & L2-normalised embedding ($\|\hat{\mathbf{e}}\|_2 = 1$) \\
+$X \in \mathbb{R}^{B \times 3 \times 512}$ & Stacked modality token sequence \\
+$P \in \mathbb{R}^{3 \times 512}$ & Learnable positional (modality) encodings \\
+$\pi_\theta$ & Fusion Transformer model with parameters $\theta$ \\
+$\hat{y}$ & Raw scalar sentiment score output \\
+$y \in [-3, +3]$ & Continuous regression target \\
+$b \in \{0,1\}$ & Binary sentiment target \\
+$\mathcal{L}$ & Multi-task training loss \\
+$\eta$ & Learning rate \\
+$\nabla$ & Gradient operator \\
+$\text{LN}$ & Layer Normalisation \\
+$\text{MHA}$ & Multi-Head Attention \\
+$\text{FFN}$ & Feed-Forward Network \\
+$\text{GAP}$ & Global Average Pooling \\
+$\sigma$ & Sigmoid function $\sigma(x) = (1+e^{-x})^{-1}$ \\
+$\mathbb{S}^{d-1}$ & Unit hypersphere in $\mathbb{R}^d$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{document}

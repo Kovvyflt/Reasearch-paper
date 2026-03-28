@@ -1,0 +1,665 @@
+\documentclass[12pt, a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[hidelinks]{hyperref}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage[numbers]{natbib}
+\usepackage{setspace}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+% ── Typography ─────────────────────────────────────────────────────────────────
+\onehalfspacing
+\setlength{\parskip}{0.5em}
+
+% ── Title ─────────────────────────────────────────────────────────────────────
+\title{\textbf{MIVA-KNIGHT: A Domain-Adaptive Multimodal Voice Assistant\\[4pt]
+       using Hybrid RAG}}
+\author{Oluwakayode (Kayode) Soyinka\\[2pt]
+        \small Concordia University of Edmonton\\
+        \small IT 571 --- Course Project Proposal}
+\date{}
+
+% ==============================================================================
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+% ── Summary ───────────────────────────────────────────────────────────────────
+\noindent\textbf{Summary}
+
+\noindent
+This project aims at developing MIVA-KNIGHT, a domain-adaptive, privacy-ready
+voice assistant that focuses on fixing the main flaw that AI assistants out
+there have where they prioritize knowing it all over accuracy and depth. It aims
+at solving the issue where current models rely on general internet noise and
+cannot refine the knowledge needed for privacy-critical sectors like knowing the
+in-depth knowledge of company bylaws rather than just knowing they exist.
+
+To make this work, the system relies on a Hybrid RAG architecture~\cite{sarmah2024hybridrag}
+that gets the best out of two worlds. It uses Knowledge Graphs to map out
+structured, multi-hop relationships in the data, while simultaneously using
+vector retrieval to understand unstructured text. This combination ensures the
+model grounds its answers in verifiable facts rather than statistical guesses.
+The design guarantees secure deployment by running the whole pipeline in a
+local, offline environment using containerized microservices~\cite{lewis2020rag}.
+For this capstone, the focus is on building a functional prototype to
+demonstrate these capabilities. This involves developing a user-friendly web
+interface for voice interaction and a backend system that visualizes the AI's
+reasoning path.
+
+This approach highlights the novelty of MIVA-KNIGHT where the model is used
+in a specific domain with the use of structured knowledge, so it is not focused
+on general knowledge like general LLMs but more on depth and accuracy. By
+offering this transparent reasoning path, the system improves trustworthiness
+and domain adaptability compared to existing multi-modal voice assistants that
+operate as black boxes~\cite{kadam2022multimodal}. Finally, the system is
+validated against a specific domain dataset to measure its accuracy and
+response speed compared to traditional search methods.
+
+\newpage
+
+% ── Table 1 ───────────────────────────────────────────────────────────────────
+\begin{table}[h!]
+\centering
+\caption{Comparative Analysis of Related Work in RAG and Voice Assistants}
+\label{tab:related_work}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabularx}{\textwidth}{@{}p{2.4cm} p{0.8cm} p{3.2cm} p{3.2cm} p{3.6cm}@{}}
+\toprule
+\textbf{Work} & \textbf{Year} & \textbf{Methodology} & \textbf{Advantages} & \textbf{Limitations} \\
+\midrule
+Sarmah et al.~\cite{sarmah2024hybridrag}
+  & 2024
+  & HybridRAG: Combines vector retrieval for unstructured text with Knowledge
+    Graphs for structured data.
+  & ``Best of both worlds'': high accuracy; reduces hallucinations; grounds
+    answers in facts.
+  & Complex architecture requiring significant computational resources. \\[4pt]
+
+Edge et al.~\cite{edge2024graphrag}
+  & 2024
+  & GraphRAG: Uses LLMs to build a KG from documents to answer global summary
+    questions.
+  & Excellent for holistic questions (e.g., ``What are main themes?'');
+    superior comprehensiveness.
+  & High token cost due to extensive summarization; graph construction is
+    slow. \\[4pt]
+
+Pan et al.~\cite{pan2024unifying}
+  & 2024
+  & Unified LLM+KG: A roadmap of 3 frameworks: KG-enhanced LLMs,
+    LLM-augmented KGs, and Synergized models.
+  & Enhances interpretability and reasoning; addresses ``black box'' nature of
+    standard LLMs.
+  & KG construction is difficult and expensive; real-time evolution is
+    challenging. \\[4pt]
+
+Kadam~\cite{kadam2022multimodal}
+  & 2022
+  & Multimodal Interaction: Framework for combining voice, visual, and touch
+    inputs/outputs.
+  & Increases user trust by ``showing'' visuals alongside speaking; improves
+    usability.
+  & Technical challenges in synchronization (e.g., lip-syncing). \\[4pt]
+
+Lewis et al.~\cite{lewis2020rag}
+  & 2020
+  & Original RAG: Foundational retrieval-augmented generation using dense
+    vector indices.
+  & Proven superiority over standard models; easier to update knowledge than
+    retraining.
+  & Can hallucinate if retrieved docs are irrelevant; lacks multi-hop
+    reasoning. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\newpage
+
+% ==============================================================================
+\section{Introduction}
+
+\subsection{Background and Motivation}
+
+Voice assistants have fundamentally changed how we interact with information,
+but they have a major flaw: they prioritize sounding like they know everything
+over actually being accurate. While modern AI systems confidently answer broad
+questions, they are largely trained on general internet noise. This data quickly
+becomes outdated and often leads to hallucinations~\cite{lewis2020rag}. When a
+model confidently generates a plausible but factually wrong answer, that
+isn't just an edge case --- it is a critical system failure.
+
+In privacy-critical fields like healthcare and corporate governance, this lack
+of factual grounding makes ``black box'' systems a serious
+liability~\cite{pan2024unifying}. They struggle to synthesize the nuanced
+knowledge required for specialized tasks. For example, a standard model might
+know that company bylaws exist, but it can't cross-reference the specific,
+interlinked clauses needed for actual compliance~\cite{johnson2019mimic}.
+MIVA-KNIGHT was built to solve this problem. By grounding every response in
+verifiable, domain-specific evidence, it shifts the AI paradigm from
+\emph{knowing it all} to \emph{knowing it right}~\cite{sarmah2024hybridrag}.
+
+\subsection{Problem Statement}
+
+Traditional Retrieval-Augmented Generation (RAG) systems were created to reduce
+hallucinations by anchoring AI responses to external
+documents~\cite{lewis2020rag}. However, standard RAG frameworks have a critical
+blind spot: they rely almost entirely on dense vector retrieval. This reliance
+creates a complexity wall when the system faces three specific real-world
+challenges:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{The Multi-Hop Reasoning Gap:} Vector similarity searches
+    struggle with queries that require connecting multiple related concepts. For
+    example, figuring out contraindicated treatments across different medical
+    conditions requires reasoning through entity relationships, not just pulling
+    up isolated documents~\cite{sarmah2024hybridrag}.
+
+  \item \textbf{The Modality Silo:} Most RAG setups are strictly text-centric,
+    meaning they can't handle the diverse data like images, audio recordings,
+    and sensor readings generated in real-world environments like clinics or
+    factories~\cite{kadam2022multimodal}. Real user queries are rarely confined
+    to just one modality.
+
+  \item \textbf{The Trust and Privacy Deficit:} Existing multi-modal AI models
+    usually operate as black boxes dependent on the cloud, making them a
+    non-starter for privacy-sensitive institutional
+    data~\cite{pan2024unifying}. High-stakes environments simply cannot trust
+    systems that lack transparent, audit-able reasoning paths.
+\end{itemize}
+
+\subsection{Research Question and Hypothesis}
+
+This project aims to develop MIVA-KNIGHT, a domain-adaptive, privacy-ready
+voice assistant powered by MM-HybridRAG --- a multi-modal extension of the
+Hybrid Retrieval-Augmented Generation
+framework~\cite{sarmah2024hybridrag}.
+
+\noindent\textbf{Research Question:} How does combining structured knowledge
+graph traversal with multi-modal dense retrieval impact the accuracy,
+hallucination resistance, and multi-hop reasoning capabilities of a
+domain-specific assistant?
+
+\noindent\textbf{Hypothesis:} The core hypothesis is that combining structured
+Knowledge Graphs (which map out multi-hop relationships) with unstructured
+vector retrieval (which handles semantic meaning) will significantly boost
+accuracy and reduce hallucinations compared to traditional vector-only methods.
+By implementing this hybrid approach across text
+(BERT)~\cite{devlin2019bert}, visual (ResNet-50)~\cite{he2016deep}, and audio
+(Wav2Vec~2.0)~\cite{baevski2020wav2vec} modalities, the model can ground its
+answers in verifiable facts rather than statistical
+guesses~\cite{kadam2022multimodal}.
+
+\subsection{Project Objectives}
+
+To demonstrate these capabilities, the primary goal of this capstone is to
+build a functional prototype. This involves four main objectives:
+
+\begin{itemize}[leftmargin=1.5em]
+  % ── FIX 1: weights corrected from 60/40 to 70/30 ─────────────────────────
+  \item \textbf{Core Architecture:} Build a hybrid retrieval engine that
+    combines dense vector similarity (weighted at 70\%) with 2-hop knowledge
+    graph traversal (weighted at 30\%)~\cite{sarmah2024hybridrag}. This setup
+    ensures the system actually reasons across entity relationships instead of
+    just fetching isolated text matches.
+
+  \item \textbf{Multi-Modal Integration:} Create a cross-attention fusion
+    mechanism~\cite{kadam2022multimodal} that can ingest and unify text, visual
+    data (from the COCO dataset~\cite{lin2014microsoft}), and audio (from the
+    RAVDESS corpus~\cite{livingstone2018ryerson}) to handle complex,
+    heterogeneous queries.
+
+  % ── FIX 2 + 3: ROCO replaces MIMIC-CXR; P@1 target corrected to >60% ─────
+  \item \textbf{Domain Adaptation:} Prove the system can transition from
+    general visual data to highly specialized medical imaging using the ROCO
+    radiology dataset. The goal here is a Precision@1 exceeding 60\% on the
+    ROCO medical benchmark, demonstrating viability for privacy-critical
+    deployments where accuracy is non-negotiable.
+
+  \item \textbf{Rigorous Benchmarking:} Evaluate the system using a
+    multi-category hallucination test suite targeting greater than 90\%
+    hedging and rejection rate, and a multi-hop accuracy evaluation on the
+    MultiHop-RAG and HotpotQA
+    benchmarks~\cite{sarmah2024hybridrag,tang2024multihop} to confirm it is
+    deployment-capable.
+\end{itemize}
+
+\subsection{Significance of the Study}
+
+MIVA-KNIGHT stands out because of its targeted approach: by running in a
+specific domain with structured knowledge, it values deep, accurate, and secure
+answers over broad, surface-level trivia. For security, MIVA-KNIGHT adopts a
+privacy-ready architecture: the system is developed using cloud infrastructure
+for rapid prototyping and fair benchmarking (enabling direct comparison with
+SAM-RAG, RT-RAG, SCM-RAG), then containerized for offline deployment
+demonstration in Month~7. This approach balances development speed with the
+strict offline constraints of healthcare and corporate governance.
+
+Additionally, the system automatically builds its knowledge graphs based on
+Named Entity Recognition (NER) co-occurrence, completely bypassing the need for
+manual curation or external
+ontologies~\cite{pan2024unifying}. This creates a highly scalable blueprint for
+domain-adaptive AI in industries such as healthcare and corporate governance.
+Finally, by showing users exactly how it arrived at an answer, the system offers
+a level of transparency and trust that legacy black-box voice assistants simply
+cannot match~\cite{kadam2022multimodal}.
+
+\subsection{Known Limitations}
+
+As with any research, there are some anticipated technical hurdles. Due to
+computational limits, training is currently restricted to the COCO val2017
+split (25,000 images)~\cite{lin2014microsoft}, which might limit the
+generalization of the model. Also, our automated knowledge graph construction
+currently uses word frequency instead of the more robust transformer-based Named
+Entity Recognition (NER). This is a known gap for graph
+quality~\cite{pan2024unifying} and is the likely reason our initial multi-hop
+accuracy sits at a baseline of 30\% rather than our ultimate 80\%
+target~\cite{sarmah2024hybridrag}.
+
+On the audio side, the Wav2Vec~2.0 processing~\cite{baevski2020wav2vec} is
+currently built for batch processing, not real-time streaming.
+
+% ── FIX 3: MIMIC-CXR credentialing reframed as future work, not a scope gap ──
+Finally, the medical validation phase uses the freely available ROCO radiology
+dataset rather than MIMIC-CXR~\cite{johnson2019mimic}, which requires
+multi-week institutional PhysioNet credentialing. MIMIC-CXR integration is
+documented as a structured future enhancement path: once credentials are
+obtained, only Pipeline~B (the medical ImageProjection head and FAISS index)
+would need retraining, leaving all other system components unchanged. This
+design decision removes credentialing as a project scope constraint while
+preserving a clear upgrade path.
+
+% ==============================================================================
+\section{Literature Review}
+
+\subsection{Overview}
+
+The emergence of large language models (LLMs) has transformed information
+retrieval, yet a fundamental flaw persists: LLMs hallucinate at rates of
+5--12\%, generating plausible but factually incorrect
+answers~\cite{zhang2023sirens,ji2023survey}. In privacy-critical regulated
+environments governed by HIPAA and GDPR, even moderate hallucination rates
+carry civil liability and risk to public health~\cite{tang2024multihop}.
+
+Retrieval-Augmented Generation (RAG) was introduced by Lewis et
+al.~\cite{lewis2020rag} to anchor model outputs to retrieved documents,
+reducing parametric guesswork. However, standard dense-vector RAG introduces
+critical limitations in multi-hop reasoning and modality support that prevent
+deployment in specialized domains. The subsections below synthesize the six core
+themes identified across the reviewed literature and map each finding directly
+to the MIVA-KNIGHT design.
+
+\subsection{Key Themes and Findings}
+
+The table below consolidates the principal findings across six thematic
+clusters, with an explicit link to architectural decisions made in MIVA-KNIGHT.
+
+\begin{longtable}{@{}p{2.0cm} p{4.8cm} p{5.0cm}@{}}
+\caption{Summary of Literature Themes and Findings}
+\label{tab:themes}\\
+\toprule
+\textbf{Theme} & \textbf{Key Finding} & \textbf{Relevance to MIVA-KNIGHT} \\
+\midrule
+\endfirsthead
+\multicolumn{3}{c}{\tablename\ \thetable{} --- continued}\\
+\toprule
+\textbf{Theme} & \textbf{Key Finding} & \textbf{Relevance to MIVA-KNIGHT} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+
+1.~Hallucination
+  & LLMs hallucinate at 5--12\% in general
+    use~\cite{zhang2023sirens,ji2023survey}. Even low rates are legally
+    unacceptable in HIPAA/GDPR contexts~\cite{tang2024multihop}.
+  & Motivates tiered confidence guards and the $>$90\% hallucination
+    hedging/rejection target. \\[6pt]
+
+% ── FIX 1: Table 2 row 2 — weights corrected from 60/40 to 70/30 ─────────────
+2.~RAG Evolution
+  & Lewis et al.~\cite{lewis2020rag} set the dense baseline (45.6\% on
+    HotpotQA). Sarmah et al.~\cite{sarmah2024hybridrag} showed hybrid RAG
+    (dense + KG) reaches 60--65\%.
+  & Informs the 70/30 weighted fusion ($\alpha{=}0.7$ dense, $0.3$ graph)
+    core architecture. \\[6pt]
+
+3.~KG Construction
+  & Manual curation yields 91--95\% precision but is
+    slow~\cite{rossiello2023knowledge}. GraphRAG~\cite{edge2024graphrag}
+    requires \$2K--\$5K and 450+ GPU-hours per domain.
+  & Justifies NER-based automatic KG achieving $>$80\% coverage in under
+    10~minutes. \\[6pt]
+
+4.~Multimodal Fusion
+  & HM-RAG~\cite{liu2025hmrag} and SAM-RAG~\cite{zhai2024samrag} process
+    multimodal documents but not simultaneous live voice + image + text
+    streams.
+  & Addresses the real-time gap using BERT~\cite{devlin2019bert},
+    ResNet-50~\cite{he2016deep}, and Wav2Vec~2.0~\cite{baevski2020wav2vec}. \\[6pt]
+
+5.~Domain Adaptation
+  & Pan et al.~\cite{pan2024unifying} show KG-enhanced LLMs improve domain
+    reasoning. Legal (LexGLUE~\cite{chalkidis2022lexglue}) benchmarks prove
+    feasibility.
+  & Validates retraining only the ImageProjection head ($\sim$2.23\% of
+    parameters). \\[6pt]
+
+6.~Evaluation
+  & Multi-hop accuracy degrades sharply: 45.6\%
+    (2-hop~\cite{yang2018hotpotqa}) $\to$ 23.1\%
+    (3.2-hop~\cite{trivedi2022musique}) $\to$ $<$20\%
+    (4-hop~\cite{tang2024multihop}).
+  & Motivates a unified protocol reporting P@1, MRR, and 4-hop accuracy. \\
+
+\end{longtable}
+
+\subsection{Research Gap}
+
+A comparison of 2024--2025 systems --- SAM-RAG~\cite{zhai2024samrag},
+RT-RAG~\cite{shi2026rtrag}, HM-RAG~\cite{liu2025hmrag},
+GraphRAG~\cite{edge2024graphrag}, and
+OmniSearch~\cite{li2024omnisearch} --- reveals a consistent pattern: progress
+has been made in individual capabilities, but no existing system simultaneously
+combines offline deployability, multi-modal live fusion, and
+privacy-compliant knowledge grounding. Five specific gaps were identified:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Cloud Dependency:} SAM-RAG and OmniSearch rely on OpenAI APIs;
+    however, Protected Health Information (PHI) cannot traverse outside
+    hospital networks (HIPAA \S\,164.312(e)).
+
+  \item \textbf{KG Cost Bottleneck:}
+    GraphRAG~\cite{edge2024graphrag} requires extensive GPU-hours, making rapid
+    domain transfer prohibitive for institutions with limited compute budgets.
+
+  \item \textbf{Benchmark Fragmentation:} No two reviewed systems use the same
+    evaluation protocol, making cross-system comparison unreliable and
+    hindering reproducibility.
+
+  % ── FIX 3: MIMIC-CXR → ROCO in the gap description ──────────────────────
+  \item \textbf{Absent Medical P@1 Reporting:} No reviewed system reports P@1
+    on open-access medical retrieval benchmarks such as the ROCO radiology
+    dataset, despite retrieval precision being a critical metric for clinical
+    decision support applications.
+
+  \item \textbf{Modality Limitation:} Most `multimodal' systems process static
+    archived documents rather than simultaneous live voice + image + text
+    inputs, leaving the real-time interaction scenario unaddressed.
+\end{itemize}
+
+\subsection{MIVA-KNIGHT Positioning}
+
+MIVA-KNIGHT is positioned to close all five gaps through four deliberate design
+decisions:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Containerized Offline Deployment:} The full pipeline runs
+    locally using quantized BERT~\cite{devlin2019bert} and an on-device LLM
+    (Llama-3.1-8B via Groq), with no external API calls required at inference
+    time.
+
+  \item \textbf{Automatic KG Construction:} NER-based entity extraction
+    achieves $>$80\% entity coverage in under ten minutes, eliminating the
+    GPU-hour cost of GraphRAG~\cite{edge2024graphrag} without sacrificing
+    semantic fidelity.
+
+  \item \textbf{True Cross-Modal Fusion:} All modalities --- text, image, and
+    audio --- are projected into a shared 512-dimensional embedding space,
+    enabling real-time simultaneous retrieval rather than sequential
+    document-level processing.
+
+  \item \textbf{Unified Evaluation Protocol:} Every experimental result is
+    reported using the same set of metrics (P@1, P@3, MRR, and multi-hop
+    accuracy), enabling direct comparison with prior systems. Month~4 results
+    already validate this foundation: P@1\,=\,64.6\%, P@3\,=\,76.8\%, and
+    MRR\,=\,0.7269 on the ROCO medical benchmark.
+\end{enumerate}
+
+% ==============================================================================
+\section{Methodology: The MM-HybridRAG Framework}
+
+MIVA-KNIGHT utilizes a Domain-Adaptive Multimodal
+Retrieval-Augmented Generation (MM-HybridRAG) system to handle multimodal
+information. While most large language models use parametric memory --- which
+has been shown to be a primary cause of hallucinations at an estimated rate of
+5--12\%~\cite{zhang2023sirens,ji2023survey} --- this architecture incorporates
+a retrieval component that provides verifiable evidence for each of its
+generated responses via a 7-stage process.
+
+The figure below presents the proposed end-to-end system methodology of
+MIVA-KNIGHT, covering all seven phases from user input through to the final
+output layer.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.90\textwidth]{Oluwakayode/Methodology_diagram.png}
+  \caption{MIVA-KNIGHT System Methodology Overview: seven-phase pipeline from
+    multi-modal user input to grounded voice and text output.}
+  \label{fig:methodology}
+\end{figure}
+
+\subsection{Multimodal Input and Feature Encoding (Phases 1--2)}
+
+As opposed to the sequential ingestion of single input types (i.e., voice,
+images, etc.), the MM-HybridRAG system concurrently accepts multiple input
+streams, thereby addressing the Modality Silo gap~\cite{kadam2022multimodal}.
+The voice input is converted from speech-to-text within the local environment
+utilizing OpenAI Whisper to maintain user privacy, whereas images and/or typed
+input can be uploaded in parallel.
+
+Each of these input modalities is then embedded using frozen, pre-trained
+backbone architectures: BERT-base-uncased~\cite{devlin2019bert} for text,
+ResNet-50~\cite{he2016deep} for images, and Wav2Vec~2.0~\cite{baevski2020wav2vec}
+for audio. These embeddings are all mapped onto a shared 512-dimensional space
+for comparison purposes through individually trained projection heads. By
+mapping each modality into a shared space, cross-modal comparisons are possible
+because the cosine similarity between any two embeddings represents a direct
+measure of their semantic distance. Additionally, the projection heads were
+trained on the COCO val2017 dataset~\cite{lin2014microsoft} for general-purpose
+alignment and the ROCO radiology dataset for transferring knowledge into the
+medical domain.
+
+\subsection{Emotion Detection and Domain Routing (Phase~3)}
+
+Phase~3 performs two simultaneous classification tasks:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Emotion Detector:} Evaluates the 512-dimensional audio feature
+    vector using Wav2Vec~2.0 features fed into a trained Audio Projection head.
+    It compares these with emotion centroids computed from the
+    RAVDESS~\cite{livingstone2018ryerson} and CREMA-D datasets. The detected
+    emotion is appended to the generation prompt to produce emotionally suitable
+    responses.
+
+  \item \textbf{Domain Router:} Identifies whether the query is general or
+    medical based on keyword presence and embedding similarity. Queries are
+    routed to the appropriate knowledge base via an interchangeable projection
+    head architecture that switches the retrieval index and vocabulary while
+    maintaining the shared BERT and Wav2Vec backbones.
+\end{itemize}
+
+\subsection{Hybrid Retrieval (Phase~4)}
+
+MIVA-KNIGHT employs a hybrid retrieval approach using a dual-pathway strategy
+to bridge the Multi-Hop Reasoning Gap found in traditional dense-vector
+systems~\cite{sarmah2024hybridrag,lewis2020rag}. In this process, dense vector
+retrieval is utilized for 70\% of the weighting to retrieve semantically similar
+documents using FAISS-indexed embeddings. Simultaneously, knowledge graph
+traversal is performed (30\% weighting) using extracted named entities to
+traverse structural relationships. The final retrieval score is calculated as:
+\begin{equation}
+  s \;=\; 0.7 \cdot s_{\mathrm{dense}} \;+\; 0.3 \cdot s_{\mathrm{KG}}
+\end{equation}
+
+\subsection{Tiered Confidence Guard (Phase~5)}
+
+Before generation, the system evaluates evidence against domain-specific
+thresholds. This satisfies the strict confidentiality needs of environments
+governed by HIPAA and GDPR~\cite{tang2024multihop}. The system operates on a
+``Traffic Light'' logic:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Green (Proceed):} Scores above 0.55 (Medical) or 0.40
+    (General) trigger full generation.
+  \item \textbf{Amber (Warning):} Intermediate scores return partial evidence
+    with a disclaimer.
+  \item \textbf{Red (Reject):} Scores below the threshold trigger a query
+    rejection with no LLM call.
+\end{itemize}
+
+This architecture discourages hallucinations by preventing generation unless
+sufficient grounding evidence exists~\cite{sarmah2024hybridrag}.
+
+\subsection{Grounded Generation and Multi-Channel Output (Phases 6--7)}
+
+The Llama-3.1-8B model performs the final generation via the Groq API,
+constrained strictly to the top five retrieved documents. The prompt includes
+the user query, retrieved evidence, and detected emotion context, ensuring the
+model synthesizes rather than creates information.
+
+The final response is delivered through three simultaneous channels:
+\begin{enumerate}[leftmargin=1.5em]
+  \item A synthesized voice response (via gTTS).
+  \item A written text version.
+  \item A visual display of the auditable source documents.
+\end{enumerate}
+
+This transparency addresses the Trust and Privacy
+Deficit~\cite{pan2024unifying} and provides the necessary human-in-the-loop
+verification required for high-risk institutional settings.
+
+% ==============================================================================
+\section{Expected Outcomes}
+
+Based on the implemented MM-HybridRAG architecture described in the preceding
+sections, MIVA-KNIGHT is expected to produce the following measurable outcomes
+at the conclusion of the project.
+
+\subsection{Retrieval Performance}
+
+The hybrid retrieval engine is expected to achieve the following metrics
+evaluated on held-out validation sets:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{ROCO medical domain:} Precision@1 $>$ 60\%, Precision@3 $>$
+    75\%, MRR $>$ 0.70. These targets are grounded in the ablation baseline of
+    P@1\,=\,64.6\% (text-only, no KG re-ranking) established in Month~4
+    evaluation.
+  \item \textbf{COCO general domain:} MRR $>$ 0.70, confirming that the shared
+    512-dimensional embedding space generalizes across domains without
+    retraining the text encoder.
+  \item \textbf{KG re-ranking contribution:} Ablation study is expected to
+    demonstrate a minimum $+$15\% P@1 improvement when KG re-ranking is added
+    on top of dense-only retrieval, validating the hybrid architecture over
+    standard RAG~\cite{sarmah2024hybridrag}.
+\end{itemize}
+
+\subsection{Domain Adaptation Speed}
+
+The central architectural claim --- that the system can swap between general
+and medical domains without retraining any encoder --- is expected to be
+confirmed with a domain swap latency well under 5 seconds. Only the FAISS
+index, the ImageProjection head, and the knowledge graph are replaced during a
+swap; BERT, Wav2Vec~2.0, TextProjection, AudioProjection, and
+VideoFrameProjection all remain frozen.
+
+\subsection{Emotion Recognition}
+
+The dual emotion pipelines are expected to achieve the following results:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{RAVDESS (Pipeline C --- audio-only SupCon):} Correct
+    classification of at least 6 out of 8 emotion categories, representing a
+    substantial improvement over the 12.5\% random baseline.
+  \item \textbf{CREMA-D (Pipeline D --- cross-modal audio-visual):} Correct
+    classification of at least 3 out of 6 emotion categories, representing
+    more than $2.5\times$ the 16.7\% random baseline and consistent with
+    frozen-backbone audio-visual multimodal emotion recognition results
+    reported in the literature.
+\end{itemize}
+
+\subsection{Multimodal Sentiment Fusion}
+
+Pipeline~E (MultimodalFusionTransformer trained on CMU-MOSI) is expected to
+achieve a test Mean Absolute Error (MAE) below 1.0 on the continuous $[-3,
++3]$ sentiment scale, beating the published Early Fusion LSTM
+baseline~\cite{lewis2020rag} and demonstrating that the shared 512-dimensional
+embedding space supports downstream sentiment regression without retraining the
+backbone encoders.
+
+\subsection{Hallucination Resistance}
+
+The tiered confidence guard and context-grounded RAG prompting together are
+expected to achieve a hallucination mitigation rate exceeding 90\% across a
+custom multi-category test suite covering: out-of-scope queries, unanswerable
+medical questions, fabrication probes (invented patient records, fake
+citations), domain boundary queries, and adversarial prompt injection attempts.
+The primary expectation is that RAG context grounding causes the LLM to hedge
+rather than invent facts, with the confidence guard serving as the final
+rejection layer for nonsensical inputs.
+
+\subsection{System Integration and Deployment Prototype}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Integration test suite:} A 38-test suite spanning unit,
+    integration, domain swap, confidence, retrieval, and regression suites is
+    expected to achieve a 100\% pass rate following all system integration
+    fixes.
+  \item \textbf{Month 7 deliverable --- \texttt{app.py}:} A functional
+    Streamlit voice assistant accepting spoken input and returning a spoken
+    answer, written response, and cited source documents. A collapsible
+    ``How did I get this answer?'' reasoning trace panel will surface domain
+    routing decisions, retrieved entity list, hybrid score breakdown,
+    confidence tier, and detected emotion --- directly addressing the Trust and
+    Privacy Deficit identified in the research gap.
+  \item \textbf{Docker/FastAPI deployment:} A containerized, offline-deployable
+    package demonstrating that the full pipeline can run without cloud
+    dependencies, satisfying the privacy-ready architecture claim for
+    HIPAA/GDPR-constrained environments.
+\end{itemize}
+
+\subsection{Summary of Quantitative Targets}
+
+Table~\ref{tab:targets} summarises all measurable success criteria for the
+project.
+
+\begin{table}[h!]
+\centering
+\caption{Quantitative Success Targets}
+\label{tab:targets}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{@{}p{5.5cm} p{2.8cm} p{5.0cm}@{}}
+\toprule
+\textbf{Metric} & \textbf{Target} & \textbf{Rationale} \\
+\midrule
+ROCO Medical P@1            & $>$ 60\%     & Grounded in Month~4 ablation baseline (64.6\% text-only) \\
+ROCO Medical MRR            & $>$ 0.70     & Standard information retrieval threshold \\
+COCO General MRR            & $>$ 0.70     & Confirms domain-agnostic embedding space \\
+KG re-ranking P@1 delta     & $\geq$ $+$15\%  & Validates hybrid over dense-only RAG \\
+Domain swap latency         & $<$ 5s       & Central architectural claim \\
+RAVDESS emotion accuracy    & $\geq$ 6/8 emotions & Meaningful above 12.5\% random baseline \\
+CREMA-D emotion accuracy    & $\geq$ 3/6 emotions & $>$2.5$\times$ above 16.7\% random baseline \\
+Pipeline E (CMU-MOSI) MAE   & $<$ 1.0      & Beat published EF-LSTM baseline \\
+Hallucination mitigation    & $>$ 90\%     & Multi-category custom test suite \\
+Integration test pass rate  & 100\% (38/38)& Full system reliability \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ==============================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{Oluwakayode/Ref_Oluwakayode}
+
+\end{document}

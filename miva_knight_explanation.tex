@@ -1,0 +1,113 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{xcolor}
+\title{\textbf{MIVA-KNIGHT: Detailed Explanation of Implementations and Repository Artifacts}}
+\author{Generated documentation for the Research-paper repository}
+\date{\today}
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Purpose of this document}
+This PDF summarizes what exists in the repository at the time of writing: which files belong to which category (images, application PDF, \LaTeX{} manuscripts, Jupyter notebooks, slides), how the five training pipelines (A--E) and extensions (reinforcement learning, agentic design notes, visualization utilities) fit together, and the main engineering steps encoded in the notebooks. It is intended as a companion to the Alberta Innovates GSS-style application narrative and the course proposal file \texttt{Main\_Oluwakayode.tex}.
+
+\section{How the repository is organized (by file type)}
+
+\subsection{Images (\texttt{.png})}
+The PNG files are primarily diagrams and illustrative screenshots for theses and presentations: flowcharts (e.g.\ \texttt{Correct Flowchart.png}, \texttt{Gemini\_RL\_Flowchart.png}), Gemini-generated concept figures, and related visuals. They support written documentation rather than executable code.
+
+\subsection{Application PDF}
+\texttt{CUEs-AB-Innovates-GSS-Application-2025-26-FILLABLE-1-8-11.pdf} is a fillable form (often rasterized in export). Its text was recovered via OCR for alignment review. It describes MIVA-KNIGHT in lay terms and outlines a multi-year research program: hybrid RAG/LightRAG-style retrieval, multimodal alignment, explainable AI, Neo4j-scale knowledge graphs, domain coverage (healthcare, energy, manufacturing, finance, education), sub-2\,s latency, and sector-specific impact metrics.
+
+\subsection{\LaTeX{} sources (\texttt{.tex})}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{\texttt{Main\_Oluwakayode.tex}} --- IT~571 course project proposal: MM-HybridRAG, 70/30 dense vs.\ KG weighting, BERT/ResNet/Wav2Vec backbones, COCO/RAVDESS/ROCO/CMU-MOSI, tiered confidence guard, Llama-3.1-8B via Groq, Streamlit/Docker deliverables, and quantitative targets (e.g.\ ROCO P@1 $>60\%$, hallucination mitigation $>90\%$).
+  \item \textbf{\texttt{MIVA\_KNIGHT\_Complete\_Thesis\_Final.tex}} and related thesis variants --- unified technical treatment of Pipelines A--E, hybrid RAG, optional RL extension (MIVA-KNIGHT-RL), and multimodal machine-learning challenge framing.
+  \item \textbf{Pipeline-annotated chapters} --- e.g.\ \texttt{MIVA\_KNIGHT\_PipelineC\_RAVDESS\_Annotated.tex}, \texttt{MIVA\_KNIGHT\_PipelineD\_CREMAD\_Annotated.tex}, \texttt{MIVA\_KNIGHT\_PipelineE\_CMUMOSI\_Annotated.tex}, month-themes (\texttt{MIVA\_KNIGHT\_Month4\_Annotated(Roco Dataset).tex}), and algorithm flowcharts.
+  \item \textbf{Supporting theory} --- \texttt{textblob\_polarity\_paper.tex} (TextBlob-based pseudo-labelling for CMU-MOSI), \texttt{miva\_knight\_agentic.tex} (agentic orchestration design), \texttt{miva\_knight\_llm.tex}, \texttt{miva\_knight\_paper.tex}, \texttt{multimodal\_challenges.tex}.
+\end{itemize}
+
+\subsection{Jupyter notebooks (\texttt{.ipynb})}
+These are the primary \emph{executable} research artifacts. They follow a recurring pattern: mount Google Drive (Colab), apply a PyTorch 2.6 \texttt{torch.load} compatibility patch, cache heavy encoder outputs once, train lightweight projection heads and/or fusion modules, evaluate P@$k$/MRR/MAE or emotion accuracy, and (in comprehensive variants) run hybrid retrieval experiments over transcripts or captions.
+
+\textbf{Core pipelines:}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Pipeline A (COCO)} --- \texttt{MIVA\_KNIGHT\_Coco dataset.ipynb}: InfoNCE contrastive training for text--image alignment, L2-normalized BERT embeddings, co-occurrence knowledge graph, hybrid retrieval (dense + graph boost).
+  \item \textbf{Pipeline B (ROCO)} --- \texttt{MIVA\_KNIGHT\_Roco Dataset.ipynb}: medical domain transfer; retrain image projection head while freezing text encoder; radiology image--caption retrieval; FAISS-style indexing described in thesis.
+  \item \textbf{Pipeline C (RAVDESS)} --- \texttt{MIVA\_KNIGHT\_PipelineC\_RAVDESS\_Standalone.ipynb}: audio-only emotion learning with frozen Wav2Vec~2.0, supervised contrastive objectives, centroids per emotion class.
+  \item \textbf{Pipeline D (CREMA-D)} --- \texttt{MIVA\_KNIGHT\_PipelineD\_Crema D.ipynb}, \texttt{MIVA\_KNIGHT\_PipelineD\_Crema D Phase 2.ipynb}: cross-modal InfoNCE between audio and video frames, optional SupCon refinement phases; \texttt{MIVA\_KNIGHT\_Challenges\_Implementation\_CREMA\_PipelineD.ipynb} (and duplicate filename variant) evaluates five MML challenges on CREMA-D caches.
+  \item \textbf{Pipeline E (CMU-MOSI)} --- \texttt{MIVA\_KNIGHT\_PipelineE\_Cmumosi\_Comprehensive\_Refined.ipynb} (and \texttt{\_v2}): strict multimodal cohort (paired \texttt{.wav} and \texttt{.mp4}), embedding cache, cross-modal Transformer fusion, sentiment regression, Whisper WER and hybrid RAG over training transcripts; \texttt{MIVA\_KNIGHT\_PipelineE\_CMUMOSI\_Annotated.ipynb} is an annotated variant; \texttt{MIVA\_KNIGHT\_Challenges\_Implementation (CMU MOSI).ipynb} runs the five-challenge suite on MOSI embeddings.
+\end{itemize}
+
+\textbf{Reinforcement learning notebooks:}
+\texttt{MIVA\_KNIGHT\_Reinforcement learning\_Implementation.ipynb}, \texttt{MIVA\_KNIGHT\_RL\_Implementation\_CMUMOSI\_PipelineE.ipynb}, \texttt{MIVA\_KNIGHT\_RL\_Implementation\_CREMA\_PipelineD.ipynb} implement a DQN-style loop that uses multimodal embeddings as state encodings and emotion/sentiment signals for reward shaping (as documented in the RL thesis sections).
+
+\textbf{Utilities and pedagogy:}
+\texttt{audio\_wav\_gifs.ipynb}, \texttt{multimodal\_single\_mp4\_gifs.ipynb}, \texttt{multimodal\_sync\_gifs.ipynb} generate synchronized GIFs for multimodal visualization; \texttt{textblob\_scratch\_analysis.ipynb} implements TextBlob polarity from scratch for analysis and labelling; \verb|miva_knight_(Coco dataset) incomplete.ipynb| is a small synthetic demo notebook.
+
+\subsection{PowerPoint (\texttt{.pptx})}
+Monthly or milestone decks (COCO Month~1, ROCO Month~4, RAVDESS, CREMA-D) support oral presentation of pipeline results; they are not machine-executable.
+
+\section{End-to-end methodology (as implemented in code and thesis text)}
+
+\subsection{Shared representation space}
+Across pipelines, the design targets a shared 512-dimensional embedding space (often L2-normalized on a hypersphere) so that text, image, and audio-derived vectors are comparable via cosine similarity. Frozen backbones (BERT, ResNet-50, Wav2Vec~2.0) feed trainable projection heads, minimizing trainable parameters and enabling ``surgical'' domain transfer (especially COCO$\rightarrow$ROCO).
+
+\subsection{Hybrid retrieval}
+The COCO and ROCO notebooks build a knowledge graph from entity co-occurrence (e.g.\ spaCy-derived entities for general domain; RadLex-biased vocabulary for medical). Retrieval combines dense nearest-neighbor search with graph-based re-scoring or boosting, consistent with the 70/30-style weighting described in \texttt{Main\_Oluwakayode.tex} (exact fusion coefficients may vary by notebook cell).
+
+\subsection{Emotion and sentiment pathways}
+RAVDESS and CREMA-D notebooks implement emotion recognition paths used for prompt conditioning or RL rewards. CMU-MOSI notebooks fuse modalities for continuous sentiment on $[-3,+3]$, with TextBlob sometimes supplying weak or pseudo-labels for data preparation.
+
+\subsection{Optional RL layer}
+The RL notebooks formalize an MDP: multimodal embeddings form the state; a small action space drives a toy control narrative; rewards tie to emotion/sentiment consistency. This extends the core retrieval/fusion stack but is not always required for the baseline RAG prototype.
+
+\section{Steps typically followed in a pipeline notebook}
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Environment}: install \texttt{transformers}, \texttt{torch}, \texttt{faiss-cpu} or GPU variant, \texttt{librosa}, etc.
+  \item \textbf{Reproducibility}: seed NumPy and PyTorch (commonly 42).
+  \item \textbf{Data paths}: discover dataset roots (including Colab Drive layouts with documented folder-name quirks).
+  \item \textbf{Caching}: run frozen encoders once; save \texttt{.pt} caches (\texttt{crema\_cache.pt}, \texttt{mosi\_emb\_cache.pt}, etc.).
+  \item \textbf{Training}: optimize projection heads and/or fusion Transformer; track best checkpoint by validation metric.
+  \item \textbf{Evaluation}: retrieval P@1/P@3/MRR, emotion class counts, sentiment MAE, optional Whisper WER and challenge dashboards.
+  \item \textbf{RAG experiments} (where implemented): build transcript/caption index + KG; run hybrid retrieval with tunable $\alpha$.
+\end{enumerate}
+
+\section{Alignment with the Alberta Innovates application PDF}
+The fillable application (recovered by OCR) promises: (i) industrial-grade multimodal voice assistance; (ii) knowledge graphs plus hybrid RAG/LightRAG-style retrieval; (iii) explainable AI with reasoning trails and attention-style visualization; (iv) on-premise, containerized deployment; (v) five vertical domains (healthcare, energy, manufacturing, finance, education) with large per-domain graphs (10k--50k entities); (vi) quantitative targets including high accuracy gains vs.\ baselines, cosine-similarity alignment thresholds, expert-rated interpretability, and sub-2\,s latency; (vii) a multi-phase 12-month methodology (datasets/graphs, hybrid retrieval and fusion, explainable UI, evaluation/deployment).
+
+\textbf{What the repository substantiates well:} multimodal encoders and projection into a shared space; hybrid retrieval experiments grounded in COCO/ROCO captions; emotion pathways on RAVDESS and CREMA-D; multimodal fusion and sentiment on CMU-MOSI; extensive \LaTeX{} documentation of algorithms; optional RL and agentic design extensions; visualization notebooks for multimodal teaching and communication.
+
+\textbf{What is only partially evidenced or absent as code:} Neo4j graph databases at the stated scale across five domains; explicit LightRAG implementation as a named library stack (the work uses HybridRAG/Sarmah-style framing and co-occurrence graphs in notebooks); dedicated energy forecasting, manufacturing defect, and finance risk modules; neural TTS and full real-time sub-2\,s end-to-end voice pipeline in production configuration; standardized expert-rated XAI studies at 90\%+ as a human study.
+
+\section{Relation to \texttt{Main\_Oluwakayode.tex} and documented gaps}
+\texttt{Main\_Oluwakayode.tex} is largely consistent with the implemented notebooks on backbone choices (BERT, ResNet-50, Wav2Vec), datasets (COCO, ROCO, RAVDESS, CREMA-D, CMU-MOSI), hybrid retrieval weighting narrative, and emotion/sentiment expectations.
+
+\textbf{Items in \texttt{Main\_Oluwakayode.tex} that may read stronger than the repository snapshot:}
+\begin{itemize}[leftmargin=1.5em]
+  \item \textbf{Deployment deliverables}: Streamlit \texttt{app.py}, Docker/FastAPI offline package, and a 38-test integration suite --- these are described as expected outcomes but are not listed among tracked repository files; treat them as targets unless separate code exists elsewhere.
+  \item \textbf{LLM inference path}: Groq API for Llama conflicts with a strict ``no external API'' offline story unless a local replacement is wired in.
+  \item \textbf{Benchmarks}: HotpotQA/MultiHop-RAG and full hallucination-suite automation may be aspirational if not checked in as scripts.
+  \item \textbf{KG construction}: the proposal mentions NER-based graphs; some notebook paths use co-occurrence/spaCy-style entities --- wording should match the actual construction method.
+  \item \textbf{Five-domain industrial scope}: the application emphasizes energy, manufacturing, finance, and education impacts; \texttt{Main\_Oluwakayode.tex} focuses on medical + general retrieval and multimodal benchmarks --- align narrative or scope boundary explicitly.
+\end{itemize}
+
+\textbf{Items in the Alberta application that \texttt{Main\_Oluwakayode.tex} under-emphasizes or omits:} explicit ``LightRAG'' naming; per-domain Neo4j milestone; sector-specific impact metrics (e.g.\ energy savings percentages, manufacturing downtime) as first-class evaluation criteria; MELD and other extra speech corpora listed in the application bibliography.
+
+\section{Plausible expected outcomes from work completed so far}
+Based on thesis and notebook claims embedded in \texttt{MIVA\_KNIGHT\_Complete\_Thesis\_Final.tex} and pipeline notebooks: strong text--image retrieval after COCO training; competitive ROCO medical retrieval after surgical image-head transfer; usable RAVDESS emotion separation above chance; CREMA-D emotion recognition in the low-to-mid accuracy range depending on phase; CMU-MOSI sentiment MAE in the sub-1.0 regime when fusion training converges; hybrid RAG demonstrations over cached transcripts/captions; optional RL demos that couple embeddings to a toy control loop. Full industrial five-domain deployment, regulatory-grade audit trails, and publication-ready latency/interpretability studies should be treated as \emph{downstream} unless corresponding artifacts are added to the repository.
+
+\section{Suggested reading order}
+\begin{enumerate}[leftmargin=1.5em]
+  \item \texttt{Main\_Oluwakayode.tex} for scope and success criteria.
+  \item \texttt{MIVA\_KNIGHT\_Complete\_Thesis\_Final.tex} for unified notation and pipeline definitions.
+  \item Notebooks in order A$\rightarrow$B$\rightarrow$C$\rightarrow$D$\rightarrow$E, then RL notebooks if needed.
+  \item Pipeline-annotated \texttt{.tex} files for publication-style step-by-step algorithms.
+\end{enumerate}
+
+\end{document}

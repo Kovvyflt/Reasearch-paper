@@ -432,302 +432,168 @@ decisions:
 % ==============================================================================
 \section{Methodology: The MM-HybridRAG Framework}
 
-\textit{Scope note:} This section describes the methodology for the
-\textbf{IT~571 capstone research prototype} implemented as reproducible Jupyter
-notebooks and supporting \LaTeX{} documentation. It is distinct from external
-funding or scholarship proposals: the capstone prioritizes verifiable
-experiments on public benchmarks (COCO, ROCO, RAVDESS, CREMA-D, CMU-MOSI), not
-multi-industry production rollouts.
+This proposal states \textbf{what} MIVA-KNIGHT does and \textbf{how} the pieces
+fit together at a level appropriate for course approval and supervision. The
+\textbf{comprehensive thesis} (\texttt{MIVA\_KNIGHT\_Complete\_Thesis\_Final.tex})
+carries the full width of the project: formal notation, all five training
+pipelines with dataset-specific procedures, PMI-weighted knowledge-graph
+algorithms, evaluation tables, optional reinforcement-learning extensions, and
+deployment notes. Readers seeking step-by-step or benchmark-by-benchmark detail
+should treat that document as authoritative; this section is a \emph{summary
+roadmap} only.
 
-MIVA-KNIGHT is realized as a \textbf{Domain-Adaptive Multimodal
-Retrieval-Augmented Generation (MM-HybridRAG)} stack. Parametric LLMs remain
-prone to hallucination at an estimated 5--12\%~\cite{zhang2023sirens,ji2023survey};
-MM-HybridRAG instead conditions generation on \emph{retrieved} evidence and a
-lightweight knowledge graph, with multimodal encoders providing aligned features
-for routing, emotion context, and retrieval. Operationally, the work is organized
-into \textbf{five training pipelines} (A--E) that share design patterns---frozen
-backbones, trainable projection heads or fusion modules, one-time embedding
-caches, and unified metrics---followed by a \textbf{hybrid retrieval and
-generation} stage that constitutes the capstone integration path.
+MIVA-KNIGHT is a \textbf{Domain-Adaptive Multimodal Retrieval-Augmented
+Generation (MM-HybridRAG)} system. It addresses LLM hallucination
+(5--12\%~\cite{zhang2023sirens,ji2023survey}) by grounding answers in retrieved
+evidence and a lightweight knowledge graph, while multimodal encoders supply
+aligned features for retrieval, emotion-aware prompting, and domain
+routing~\cite{kadam2022multimodal,sarmah2024hybridrag}. The architecture
+rests on three ideas: \textbf{(1)} map text, speech-derived text, and images into
+a \textbf{shared embedding space} using frozen pretrained backbones
+(BERT~\cite{devlin2019bert}, ResNet-50~\cite{he2016deep},
+Wav2Vec~2.0~\cite{baevski2020wav2vec}) and small trainable heads;
+\textbf{(2)} train and validate \textbf{several multimodal tracks} (general
+retrieval, medical-domain transfer, audio emotion, audio--video emotion, and
+multimodal sentiment fusion) so that the assistant can condition responses on
+non-text context; \textbf{(3)} at inference, run \textbf{hybrid retrieval}
+(dense similarity plus graph-based support), apply a \textbf{tiered confidence
+guard}, then generate with a \textbf{constrained LLM} and present answers with
+citations and an auditable trace~\cite{pan2024unifying,lewis2020rag}.
 
-Figure~\ref{fig:methodology} summarizes the end-to-end methodology from
-multimodal input to grounded outputs. The numbered phases align with the
-executable notebook structure referenced throughout the project artifacts.
+Figure~\ref{fig:methodology} shows this flow at proposal granularity. It is
+consistent with the thesis ``full system pipeline'' figure but deliberately omits
+dataset names, file formats, and algorithm pseudocode.
 
 \begin{figure}[h!]
   \centering
   \begin{tikzpicture}[
     font=\small,
     box/.style={rectangle, rounded corners=2pt, draw=black!65, align=center,
-      minimum width=2.85cm, minimum height=0.85cm, inner sep=3pt},
-    wide/.style={box, minimum width=6.4cm},
+      minimum width=2.75cm, minimum height=0.82cm, inner sep=3pt},
+    wide/.style={box, minimum width=7.2cm},
     arr/.style={-{Stealth[length=2.2mm]}, thick, black!55},
-    lab/.style={font=\scriptsize, inner sep=1pt}
+    lab/.style={font=\scriptsize\itshape, inner sep=1pt, text=black!60}
   ]
-    % Row 1: inputs
-    \node[box, fill=blue!8] (in1) {Voice / audio\\(Whisper ASR)};
-    \node[box, fill=blue!8, right=0.35cm of in1] (in2) {Text / query};
-    \node[box, fill=blue!8, right=0.35cm of in2] (in3) {Image / frame};
-    % Row 2: encoders (wide bar under inputs)
-    \node[box, fill=orange!12, below=0.55cm of in2, minimum width=8.6cm] (enc)
-      {Frozen encoders + 512-D projection heads (BERT, ResNet-50, Wav2Vec)};
-    \node[lab, left=0.1cm of enc.west, anchor=east] {\textbf{1--2}};
-    % Pipelines band
-    \node[wide, fill=green!10, below=0.45cm of enc] (pipe)
-      {\textbf{Pipeline training (capstone artifacts)}\\
-      A: COCO text--image \quad B: ROCO transfer \quad C: RAVDESS\\
-      D: CREMA-D audio--video \quad E: CMU-MOSI fusion};
-    \node[lab, left=0.1cm of pipe.west, anchor=east] {\textbf{2}};
-    % Row: emotion + router
-    \node[box, fill=yellow!15, below=0.45cm of pipe.west, xshift=-0.8cm] (emo)
-      {Emotion / sentiment\\context (C--E)};
-    \node[box, fill=yellow!15, right=0.4cm of emo] (route)
-      {Domain router\\(general vs.\ medical)};
-    \node[lab, left=0.1cm of emo.west, anchor=east] {\textbf{3}};
-    % Hybrid retrieval
-    \node[box, fill=teal!12, below=0.55cm of $(emo)!0.5!(route)$] (hyb)
-      {Hybrid retrieval: FAISS dense +\\co-occurrence KG ($s{=}0.7 s_d{+}0.3 s_{KG}$)};
-    \node[lab, left=0.1cm of hyb.west, anchor=east] {\textbf{4}};
-    % Confidence
-    \node[box, fill=red!8, below=0.45cm of hyb] (conf)
-      {Tiered confidence guard\\(green / amber / red)};
-    \node[lab, left=0.1cm of conf.west, anchor=east] {\textbf{5}};
-    % Generation
-    \node[box, fill=violet!10, below=0.45cm of conf] (llm)
-      {Grounded generation (Llama-3.1-8B)\\top-$k$ evidence + emotion in prompt};
-    \node[lab, left=0.1cm of llm.west, anchor=east] {\textbf{6--7}};
-    % Outputs
-    \node[box, fill=gray!12, below=0.45cm of llm] (out)
-      {Outputs: text, TTS (e.g.\ gTTS),\\cited sources / reasoning trace (UI)};
-    \node[lab, left=0.1cm of out.west, anchor=east] {\textbf{7}};
-    % Arrows
-    \draw[arr] (in1.south) -- ++(0,-0.15) -| (enc.north);
+    \node[box, fill=blue!8] (in1) {Speech\\{\scriptsize (ASR)}};
+    \node[box, fill=blue!8, right=0.32cm of in1] (in2) {Text};
+    \node[box, fill=blue!8, right=0.32cm of in2] (in3) {Image / video frame};
+    \node[box, fill=orange!12, below=0.5cm of in2, minimum width=8.0cm] (enc)
+      {Multimodal encoding $\rightarrow$ shared representation space};
+    \node[wide, fill=green!10, below=0.42cm of enc] (train)
+      {Offline training \& validation tracks\\{\scriptsize (retrieval, domain transfer, emotion, multimodal fusion --- full detail in thesis)}};
+    \node[box, fill=yellow!15, below=0.42cm of train.west, xshift=-0.65cm] (emo)
+      {Emotion / sentiment\\context};
+    \node[box, fill=yellow!15, right=0.35cm of emo] (route)
+      {Domain routing\\(e.g.\ general vs.\ specialized index)};
+    \node[box, fill=teal!12, below=0.5cm of $(emo)!0.5!(route)$, minimum width=6.8cm] (hyb)
+      {Hybrid retrieval: dense index + knowledge-graph re-ranking};
+    \node[box, fill=red!8, below=0.4cm of hyb] (conf)
+      {Tiered confidence guard};
+    \node[box, fill=violet!10, below=0.4cm of conf, minimum width=6.2cm] (llm)
+      {Grounded LLM generation {\scriptsize (evidence-bounded prompt)}};
+    \node[box, fill=gray!12, below=0.4cm of llm, minimum width=6.2cm] (out)
+      {User-facing outputs: text, speech, sources, reasoning summary};
+    \node[lab, anchor=east] at ([xshift=-2mm]enc.west) {1};
+    \node[lab, anchor=east] at ([xshift=-2mm]train.west) {2};
+    \node[lab, anchor=east] at ([xshift=-2mm]emo.west) {3};
+    \node[lab, anchor=east] at ([xshift=-2mm]hyb.west) {4};
+    \node[lab, anchor=east] at ([xshift=-2mm]conf.west) {5};
+    \node[lab, anchor=east] at ([xshift=-2mm]llm.west) {6};
+    \node[lab, anchor=east] at ([xshift=-2mm]out.west) {7};
+    \draw[arr] (in1.south) -- ++(0,-0.12) -| (enc.north);
     \draw[arr] (in2.south) -- (enc.north);
-    \draw[arr] (in3.south) -- ++(0,-0.15) -| (enc.north);
-    \draw[arr] (enc.south) -- (pipe.north);
-    \draw[arr] (pipe.south) -- ++(0,-0.2) -| (emo.north);
-    \draw[arr] (pipe.south) -- ++(0,-0.2) -| (route.north);
-    \draw[arr] (emo.south) |- ($(hyb.north west)!0.3!(hyb.north east)$);
-    \draw[arr] (route.south) |- ($(hyb.north west)!0.7!(hyb.north east)$);
+    \draw[arr] (in3.south) -- ++(0,-0.12) -| (enc.north);
+    \draw[arr] (enc.south) -- (train.north);
+    \draw[arr] (train.south) -- ++(0,-0.18) -| (emo.north);
+    \draw[arr] (train.south) -- ++(0,-0.18) -| (route.north);
+    \draw[arr] (emo.south) |- ($(hyb.north west)!0.28!(hyb.north east)$);
+    \draw[arr] (route.south) |- ($(hyb.north west)!0.72!(hyb.north east)$);
     \draw[arr] (hyb.south) -- (conf.north);
     \draw[arr] (conf.south) -- (llm.north);
     \draw[arr] (llm.south) -- (out.north);
   \end{tikzpicture}
-  \caption{MIVA-KNIGHT capstone methodology: multimodal encoding, five pipeline
-    artifacts (A--E), routing and hybrid retrieval, confidence gating, and
-    grounded multi-channel output. Phase labels match
-    Section~\ref{sec:method-detail}.}
+  \caption{High-level MM-HybridRAG methodology for the capstone proposal.
+    Numbered stages are conceptual; datasets, loss functions, and full inference
+    algorithms appear in the comprehensive thesis.}
   \label{fig:methodology}
 \end{figure}
 
-\subsection{Multimodal Input and Feature Encoding (Phases 1--2)}
-\label{sec:method-detail}
+\subsection{Encoding, training tracks, and retrieval (summary)}
 
-The MM-HybridRAG prototype accepts \textbf{text}, \textbf{speech} (decoded to
-text), and \textbf{images} (including video frames where applicable), addressing
-the Modality Silo gap~\cite{kadam2022multimodal}. Speech is transcribed with
-OpenAI Whisper in the notebook environment; typed queries and captions are fed
-directly to the text encoder. Images are processed as still frames or
-radiology thumbnails depending on the benchmark.
+User inputs are converted into a common representation so that retrieval and
+generation can treat text, transcribed speech, and imagery
+consistently~\cite{kadam2022multimodal}. A family of \textbf{training and
+validation tracks} (the thesis's Pipelines A--E) proves that the shared space
+supports general retrieval, targeted domain adaptation, emotion-related signals,
+and multimodal fusion before those signals are wired into the assistant
+behavior. \textbf{Hybrid retrieval} then combines fast dense search with
+graph-based re-scoring so that answers can draw on both similarity and
+relational structure~\cite{sarmah2024hybridrag,lewis2020rag}. The fusion weight
+used in the reference implementation follows a fixed dense/graph split
+(e.g.\ 70\%/30\%); exact scoring and normalization appear in the thesis.
 
-Each stream is embedded with \textbf{frozen} backbone models and a
-\textbf{trainable} projection head: BERT-base-uncased~\cite{devlin2019bert} for
-text, ResNet-50~\cite{he2016deep} for vision, and Wav2Vec~2.0~\cite{baevski2020wav2vec}
-for audio. All projected vectors live in a \textbf{shared 512-dimensional}
-space (L2-normalized where specified in the notebooks) so cosine similarity
-scores retrieval and cross-modal alignment. Training follows five pipelines:
-\textbf{A}---COCO val2017 text--image InfoNCE; \textbf{B}---ROCO surgical
-transfer of the image head while freezing text and shared objectives;
-\textbf{C}---RAVDESS audio-only emotion; \textbf{D}---CREMA-D audio--visual
-emotion with cross-modal contrastive phases; \textbf{E}---CMU-MOSI multimodal
-sentiment with a cross-modal Transformer fusion head. Heavy encoders run
-once to build caches (\texttt{.pt} files) before head-only or fusion training,
-which is the capstone's practical answer to limited GPU time.
+\subsection{Safety, generation, and outputs (summary)}
 
-\subsection{Emotion Detection and Domain Routing (Phase~3)}
-
-Phase~3 attaches \textbf{non-generative} side heads derived from pipelines C--E.
-The audio emotion path uses Wav2Vec features and trained projection weights
-with supervision from RAVDESS and CREMA-D; the multimodal sentiment path uses
-Pipeline~E outputs on CMU-MOSI. Detected emotion or sentiment summary text is
-\textbf{concatenated to the prompt} so the final LLM can modulate tone without
-inventing clinical facts.
-
-The \textbf{domain router} distinguishes general-domain retrieval (COCO-style
-captions and entities) from medical retrieval (ROCO captions and RadLex-biased
-entity sets) using lightweight rules (keywords) and embedding similarity. Only
-the \textbf{image projection head}, FAISS index, and graph vocabulary swap at
-domain change; BERT, Wav2Vec, and the text projection remain frozen, matching the
-``surgical transfer'' objective stated in the literature review.
-
-\subsection{Hybrid Retrieval (Phase~4)}
-
-Hybrid retrieval combines \textbf{dense} nearest-neighbor search over FAISS with
-\textbf{graph-based} re-scoring built from entity co-occurrence (spaCy- or
-frequency-derived entities in the notebooks, with medical seed terms for ROCO).
-Dense retrieval receives a 70\% weight and graph-derived multi-hop support
-receives 30\%, following Sarmah et al.~\cite{sarmah2024hybridrag}:
-\begin{equation}
-  s \;=\; 0.7 \cdot s_{\mathrm{dense}} \;+\; 0.3 \cdot s_{\mathrm{KG}}.
-\end{equation}
-This dual pathway targets the Multi-Hop Reasoning Gap~\cite{lewis2020rag} while
-remaining implementable without proprietary graph databases in the capstone
-environment.
-
-\subsection{Tiered Confidence Guard (Phase~5)}
-
-Before any generative call, retrieved evidence is scored against
-\textbf{domain-specific} thresholds inspired by regulated settings
-\cite{tang2024multihop}. The guard uses a three-tier policy:
-
-\begin{itemize}[leftmargin=1.5em]
-  \item \textbf{Green (Proceed):} Similarity and graph support exceed medical
-    (0.55) or general (0.40) cutoffs; full generation is allowed.
-  \item \textbf{Amber (Warning):} Intermediate scores return partial passages and
-    an explicit uncertainty disclaimer.
-  \item \textbf{Red (Reject):} Evidence is insufficient; the system refuses
-    generation and avoids a parametric guess.
-\end{itemize}
-
-The guard is evaluated together with the custom hallucination probes listed
-under Expected Outcomes; it is a capstone \emph{demonstration} of risk-aware RAG,
-not a certified compliance control.
-
-\subsection{Grounded Generation and Multi-Channel Output (Phases 6--7)}
-
-The \textbf{Llama-3.1-8B} instruct model generates answers via the Groq API
-during development, conditioned on the \textbf{top five} retrieved segments and
-the emotion context string. The capstone treats this as a \textbf{controlled
-prototype}: API use enables rapid iteration for the course timeline; swapping
-to a \textbf{local} quantized Llama for offline demo is documented as the
-integration stretch goal (parallel to containerized deployment in the outcomes
-section). Prompting forbids fabricating citations beyond retrieved IDs.
-
-Outputs are designed for the capstone demo: \textbf{(1)} spoken playback via a
-lightweight TTS (e.g.\ gTTS); \textbf{(2)} on-screen text; \textbf{(3)} a panel
-listing retrieved sources and intermediate scores so instructors can audit
-retrieval and routing. This directly supports the Trust and Privacy
-Deficit motivation~\cite{pan2024unifying} at prototype fidelity.
+A \textbf{tiered confidence guard} blocks or downgrades generation when
+evidence is weak, using stricter thresholds in sensitive domains than in general
+use~\cite{tang2024multihop}. The LLM is prompted to rely on retrieved passages
+only; optional cloud APIs during prototyping may later be replaced by a local
+model for offline demonstration. The user receives \textbf{text}, optional
+\textbf{text-to-speech}, and \textbf{cited sources} plus a short explanation of
+how the system routed the query and scored evidence---supporting transparency
+without claiming regulatory certification~\cite{pan2024unifying}.
 
 % ==============================================================================
 \section{Expected Outcomes}
 
-This section states \textbf{capstone-level} deliverables: measurable results tied
-to the notebooks and thesis artifacts submitted for IT~571, and a clear
-distinction between \emph{what must be demonstrated for the course} and
-\emph{optional stretch goals} (e.g., full offline deployment). These outcomes
-are \textbf{not} identical to the broader narrative in external scholarship
-applications, which may describe multi-sector timelines or impact metrics beyond
-the scope of a single-term project.
+This section lists \textbf{what success looks like} for the IT~571 capstone at a
+glance. It is aligned with the evaluation narrative and target table in the
+comprehensive thesis; \textbf{per-dataset protocols, logged runs, and optional
+extensions} (e.g.\ reinforcement learning) belong there, not in a proposal
+meant to introduce the project to the instructor and committee.
 
-\subsection{Retrieval and Hybrid RAG}
+\subsection{Project-level outcomes}
 
-The primary quantitative evidence for MM-HybridRAG will come from
-\textbf{held-out validation} on the same benchmarks used in training:
+By the end of the capstone, MIVA-KNIGHT should demonstrate: \textbf{(1)}
+\textbf{credible retrieval} in both a general and a specialized visual--language
+setting, with hybrid dense-plus-graph retrieval outperforming dense-only
+retrieval in a controlled ablation~\cite{sarmah2024hybridrag}; \textbf{(2)}
+\textbf{fast domain switching} between indices without retraining the main text
+and audio encoders; \textbf{(3)} \textbf{usable emotion and multimodal sentiment
+signals} that improve prompting or evaluation metrics relative to naive
+baselines; \textbf{(4)} \textbf{strong hallucination resistance} on a defined
+probe set when combined with the tiered guard; and \textbf{(5)} an
+\textbf{integrated demo} (e.g.\ Streamlit) that exposes sources and a short
+reasoning summary, plus automated regression tests that protect core behavior.
+Optional packaging for fully offline inference is desirable but not required for
+the proposal's success story.
 
-\begin{itemize}[leftmargin=1.5em]
-  \item \textbf{ROCO (medical transfer):} Target Precision@1 $>$ 60\%,
-    Precision@3 $>$ 75\%, and MRR $>$ 0.70, consistent with the Month~4
-    ablation baseline (P@1\,=\,64.6\% text-only) already reported in the
-    project write-up.
-  \item \textbf{COCO (general domain):} Target MRR $>$ 0.70 on val2017
-    text--image retrieval to show that the shared embedding space remains
-    usable without retraining BERT.
-  \item \textbf{Hybrid ablation:} Document a \textbf{minimum} $+$15\% P@1 improvement
-    when graph re-ranking is enabled on top of dense-only retrieval, citing
-    the same experimental protocol (same splits, same $k$) for both
-    conditions~\cite{sarmah2024hybridrag}.
-\end{itemize}
+\subsection{Summary of quantitative targets}
 
-\subsection{Domain Adaptation and Latency}
-
-The capstone will \textbf{demonstrate} domain swap (general $\leftrightarrow$
-medical) by reloading the FAISS index, image projection checkpoint, and graph
-vocabulary while keeping text and audio encoders frozen. The success criterion
-is \textbf{end-to-end swap latency under 5 seconds} on the development machine,
-documented with timestamps in the integration notebook or demo script. This
-validates the ``surgical transfer'' claim without implying production
-load-tested performance.
-
-\subsection{Emotion and Sentiment Pathways}
-
-Emotion and sentiment modules are evaluated on their respective public datasets:
-
-\begin{itemize}[leftmargin=1.5em]
-  \item \textbf{RAVDESS (Pipeline C):} At least \textbf{6 of 8} emotion
-    categories correct above random (12.5\%), using the supervised contrastive
-    setup described in the standalone pipeline notebook.
-  \item \textbf{CREMA-D (Pipeline D):} At least \textbf{3 of 6} emotions
-    above the 16.7\% random baseline after the cross-modal InfoNCE and
-    refinement phases, consistent with the logged Phase~2 improvements in the
-    CREMA-D notebooks.
-  \item \textbf{CMU-MOSI (Pipeline E):} Test Mean Absolute Error (MAE)
-    \textbf{below 1.0} on the continuous $[-3,+3]$ sentiment scale for the
-    strict multimodal cohort (paired \texttt{.wav} and \texttt{.mp4}), showing
-    that cross-modal fusion adds value beyond text-only baselines.
-\end{itemize}
-
-\subsection{Hallucination Mitigation and Transparency}
-
-For the course prototype, hallucination resistance is evaluated with a
-\textbf{documented} multi-category test suite (out-of-scope queries, unanswerable
-medical prompts, fabrication probes, boundary cases, and adversarial prompts).
-The target is \textbf{$>$90\% combined} hedging, abstention, or correct
-grounded answers when evidence is missing or weak, with the tiered guard
-recording the final decision. This is an \textbf{experimental} capstone metric,
-not a regulatory certification.
-
-\subsection{Integration and Capstone Demo}
-
-The following items define the \textbf{minimum} integration surface for IT~571:
-
-\begin{itemize}[leftmargin=1.5em]
-  \item \textbf{Reproducible runbook:} A single README or notebook sequence that
-    reproduces the main retrieval and fusion metrics from cached embeddings
-    (no undisclosed manual steps).
-  \item \textbf{Streamlit demo (\texttt{app.py}) or equivalent:} A web interface
-    that accepts voice or text input, returns a text answer and optional TTS,
-    and displays \textbf{retrieved passages with hybrid scores}, domain route,
-    confidence tier, and emotion/sentiment context. A collapsible ``How did I
-    get this answer?'' panel satisfies the transparency objective from the
-    research gap.
-  \item \textbf{Automated checks:} A \textbf{38-test} regression suite
-    covering unit, retrieval, domain swap, and confidence paths, reported with
-    pass/fail in the final submission (target \textbf{100\%} pass for
-    capstone credit).
-\end{itemize}
-
-\textbf{Stretch goal (non-blocking):} Package the inference path in a
-Dockerfile or FastAPI wrapper with a \textbf{locally} quantized Llama to
-illustrate offline deployment; the capstone may rely on Groq during development
-if the stretch is not completed, with that limitation stated in the
-demonstration.
-
-\subsection{Summary of Quantitative Targets}
-
-Table~\ref{tab:targets} summarises measurable success criteria for the
-\textbf{IT~571 capstone}. The same table should be copied into the final report
-with \textbf{actual} numbers filled in.
+Table~\ref{tab:targets} mirrors the thesis success criteria at a single glance.
+\textbf{Final reported values}, split definitions, and phase-by-phase emotion
+results are documented in \texttt{MIVA\_KNIGHT\_Complete\_Thesis\_Final.tex} and
+the accompanying notebooks.
 
 \begin{table}[h!]
 \centering
-\caption{Quantitative Success Targets (Capstone)}
+\caption{Quantitative success targets (aligned with the comprehensive thesis)}
 \label{tab:targets}
 \renewcommand{\arraystretch}{1.3}
 \begin{tabularx}{\textwidth}{@{}p{5.5cm} p{2.8cm} p{5.0cm}@{}}
 \toprule
 \textbf{Metric} & \textbf{Target} & \textbf{Rationale} \\
 \midrule
-ROCO Medical P@1            & $>$ 60\%     & Grounded in Month~4 ablation baseline (64.6\% text-only) \\
+ROCO Medical P@1            & $>$ 60\%     & Medical retrieval precision (thesis evaluation chapter) \\
 ROCO Medical MRR            & $>$ 0.70     & Standard information retrieval threshold \\
 COCO General MRR            & $>$ 0.70     & Confirms domain-agnostic embedding space \\
 KG re-ranking P@1 delta     & $\geq$ $+$15\%  & Validates hybrid over dense-only RAG \\
-Domain swap latency         & $<$ 5s       & Central architectural claim \\
+Domain swap latency         & $<$ 5s       & Surgical transfer / hot-swap claim \\
 RAVDESS emotion accuracy    & $\geq$ 6/8 emotions & Meaningful above 12.5\% random baseline \\
 CREMA-D emotion accuracy    & $\geq$ 3/6 emotions & $>$2.5$\times$ above 16.7\% random baseline \\
-Pipeline E (CMU-MOSI) MAE   & $<$ 1.0      & Beat published EF-LSTM baseline \\
+Pipeline E (CMU-MOSI) MAE   & $<$ 1.0      & Multimodal fusion baseline beat \\
 Hallucination mitigation    & $>$ 90\%     & Multi-category custom test suite \\
-Integration test pass rate  & 100\% (38/38)& Full system reliability \\
+Integration test pass rate  & 100\% (38/38)& Core integration reliability \\
 \bottomrule
 \end{tabularx}
 \end{table}

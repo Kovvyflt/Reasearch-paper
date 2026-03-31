@@ -1,0 +1,31 @@
+% =============================================================================
+% MIVA-KNIGHT — Masters-level introduction (one printed page when compiled
+% with Main_Oluwakayode.tex). Standalone: wrap in article + \input this file.
+% =============================================================================
+
+\section{Introduction}
+
+\begingroup
+\setstretch{1.05}
+\setlength{\parskip}{0.35em}
+\small
+
+\paragraph{Background and motivation.}
+Voice interfaces have reshaped access to information, yet contemporary assistants often optimize for fluency over fidelity: large language models (LLMs) trained on broad web-scale corpora frequently produce \emph{confident} but \emph{unsupported} statements---a phenomenon widely documented as hallucination~\cite{ji2023survey,zhang2023sirens,lewis2020rag}. In regulated or high-liability settings (clinical decision support, corporate compliance, legal review), such behaviour is not a minor inconvenience but a structural risk~\cite{pan2024unifying}. A model may ``know'' that bylaws or imaging guidelines exist without being able to tie claims to the specific clauses or studies that justify them~\cite{johnson2019mimic}. \textbf{MIVA-KNIGHT} (\emph{Multimodal Interactive Voice Assistant with Knowledge-driven Hybrid Intelligence and Adaptive Domain Transfer}) addresses this gap by grounding spoken and typed interaction in \emph{retrieved, attributable evidence} and structured relational cues, shifting the design objective from \emph{knowing everything} to \emph{knowing what can be justified}~\cite{sarmah2024hybridrag}.
+
+\paragraph{Problem statement.}
+Retrieval-augmented generation (RAG)~\cite{lewis2020rag} mitigates parametric hallucination by conditioning generation on external passages; however, dense-vector retrieval alone hits a \textbf{multi-hop reasoning ceiling}: similarity to isolated chunks does not guarantee coverage of relational constraints among entities~\cite{sarmah2024hybridrag,yang2018hotpotqa}. Moreover, real users combine \textbf{speech, text, and imagery}; text-only RAG ignores audio-visual context that disambiguates intent and affect~\cite{kadam2022multimodal}. Finally, many multimodal deployments rely on opaque cloud APIs, which conflicts with institutional requirements for audit trails and data sovereignty~\cite{pan2024unifying}. MIVA-KNIGHT targets these three gaps through \textbf{MM-HybridRAG}: dense retrieval over a shared multimodal embedding space, graph-based re-ranking from automatically derived entity statistics, tiered confidence gating, and explicit surfacing of sources alongside generation.
+
+\paragraph{Research question and hypothesis.}
+\textbf{Research question:} How does combining graph-structured evidence with multimodal dense retrieval affect retrieval accuracy, hallucination resistance, and multi-hop behaviour in a domain-adaptive voice assistant? \textbf{Hypothesis:} Fusing vector similarity (semantic coverage) with knowledge-graph signals (relational support) yields measurably stronger grounding than dense-only RAG~\cite{sarmah2024hybridrag}, especially when text (BERT~\cite{devlin2019bert}), vision (ResNet-50~\cite{he2016deep}), and audio (Wav2Vec~2.0~\cite{baevski2020wav2vec}) are aligned into a common representation for retrieval and for emotion- or sentiment-aware prompting.
+
+\paragraph{Objectives and scope.}
+The work implements a \textbf{functional research prototype} with five offline training tracks---general text--image retrieval on COCO~\cite{lin2014microsoft}, surgical medical transfer on ROCO radiology captions~\cite{pelka2018radiology}, audio emotion on RAVDESS~\cite{livingstone2018ryerson}, audio--visual emotion on CREMA-D~\cite{cao2014crema}, and multimodal sentiment fusion on CMU-MOSI~\cite{zadeh2016mosi}---feeding a runtime pipeline of Whisper speech-to-text, FAISS dense shortlisting, PMI-weighted NER--KG re-ranking with fixed dense/graph weights (70\%/30\%), tiered confidence thresholds, and Llama-3.1-8B generation constrained to retrieved context. Success is assessed through domain-specific retrieval metrics (including ROCO Precision@1), hybrid ablations, emotion and sentiment benchmarks, a multi-category hallucination probe suite, and---where feasible---multi-hop QA baselines (e.g., HotpotQA~\cite{yang2018hotpotqa}) aligned with the hybrid-RAG literature~\cite{tang2024multihop,sarmah2024hybridrag}.
+
+\paragraph{Significance.}
+MIVA-KNIGHT contributes an \textbf{integrated systems methodology}: modular frozen backbones with trainable projection heads, automatic graph construction from co-occurring entities~\cite{pan2024unifying}, and transparent presentation of routing, scores, and citations---contrasting with black-box multimodal assistants~\cite{kadam2022multimodal}. The architecture is developed to support reproducible benchmarking against open corpora and, where applicable, comparison with recent multimodal RAG proposals~\cite{zhai2024samrag,liu2025hmrag,li2024omnisearch}.
+
+\paragraph{Limitations.}
+Scope is constrained by compute: training emphasizes COCO val2017-scale batches~\cite{lin2014microsoft}; graph quality depends on NER--PMI extraction rather than costly human-curated ontologies~\cite{pan2024unifying}, which caps early multi-hop scores relative to aspirational targets~\cite{sarmah2024hybridrag}. Audio encoding follows batch rather than streaming Wav2Vec deployment~\cite{baevski2020wav2vec}. Medical imaging evidence uses ROCO rather than credential-gated MIMIC-CXR~\cite{johnson2019mimic}; the modular design confines future MIMIC adaptation largely to the medical image head and index.
+
+\endgroup

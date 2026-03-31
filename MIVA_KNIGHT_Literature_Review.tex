@@ -1,0 +1,137 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{enumitem}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\usepackage{xcolor}
+
+\onehalfspacing
+\setlength{\parskip}{0.45em}
+
+\title{\textbf{Literature Review: Multimodal Retrieval-Augmented Generation,\\
+Knowledge Grounding, and Voice-Centric Assistants}\\
+\large Context for the MIVA-KNIGHT Research Programme}
+\author{Oluwakayode (Kayode) Soyinka\\
+\small Concordia University of Edmonton}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+This review synthesizes research streams that converge in \textbf{MIVA-KNIGHT} (Multimodal Interactive Voice Assistant with Knowledge-driven Hybrid Intelligence): \emph{(i)}~large language model limitations and hallucinations; \emph{(ii)}~retrieval-augmented generation (RAG) and hybrid dense--graph retrieval; \emph{(iii)}~knowledge-graph augmentation of language models; \emph{(iv)}~multimodal representation learning and fusion for speech, vision, and text; \emph{(v)}~emotion and sentiment in spoken interfaces; and \emph{(vi)}~interpretability and risk-aware generation in regulated settings. The review follows a thematic structure common in systematic narrative reviews: scope definition, chronological and conceptual development of each theme, critical comparison of methods, identification of gaps, and positioning of MIVA-KNIGHT as a systems-level integration of these ideas rather than a single-algorithm contribution. References are drawn from peer-reviewed venues, widely cited preprints, and benchmark documentation aligned with the MIVA-KNIGHT codebase and thesis manuscripts.
+\end{abstract}
+
+\noindent\textbf{Keywords:} retrieval-augmented generation, knowledge graphs, multimodal learning, contrastive learning, speech emotion, sentiment analysis, explainable AI, voice assistants.
+
+\section{Introduction and scope}
+
+\subsection{Purpose and audience}
+
+A doctoral-style literature review typically maps a field, compares competing theories or methods, and exposes unresolved questions \cite{hart1998doing,boote2005students}. This document serves the narrower but still scholarly purpose of \textbf{framing the MIVA-KNIGHT project}: a domain-adaptive, multimodal voice assistant that combines hybrid retrieval (dense vectors plus graph-structured evidence), multimodal encoders, and constrained language generation. The review therefore selects work that is \emph{directly} relevant to those design choices, while acknowledging adjacent areas (e.g., agentic tool-use \cite{yao2023react}, long-horizon memory \cite{gutierrez2024hipporag}) only where they clarify the research landscape.
+
+\subsection{Inclusion criteria}
+
+Studies were included if they address at least one of: (1)~RAG or open-domain QA with neural retrievers; (2)~graph-based or hybrid retrieval for QA; (3)~multimodal alignment (image--text, audio--text, video--text); (4)~speech emotion or multimodal sentiment; (5)~hallucination measurement or mitigation in LLMs; (6)~benchmark datasets used in MIVA-KNIGHT (e.g., COCO \cite{lin2014microsoft}, ROCO \cite{pelka2018radiology}, RAVDESS \cite{livingstone2018ryerson}, CREMA-D \cite{cao2014crema}, CMU-MOSI \cite{zadeh2016mosi}). The repository's extended manuscripts (\texttt{miva\_knight\_paper.tex}, \texttt{MIVA\_KNIGHT\_Complete\_Thesis\_Final.tex}) supply additional citations to multimodal foundation models and engineering tools \cite{wolf2020transformers,paszke2019pytorch,johnson2019billion}; those appear where they support infrastructure claims.
+
+\section{Large language models, hallucination, and the case for retrieval}
+
+\subsection{Parametric knowledge and its failure modes}
+
+Transformer-based language models store factual associations implicitly in weights. Surveys document persistent \textbf{hallucination}: fluent but unsupported statements, at estimated rates that make ungrounded deployment risky in medicine and law \cite{zhang2023sirens,ji2023survey}. This limitation motivates \emph{non-parametric} grounding: retrieving evidence at inference time rather than relying solely on memorized statistics.
+
+\subsection{Retrieval-augmented generation}
+
+Lewis et al.\ introduced \textbf{RAG}, pairing a dense retriever with a seq2seq generator so that answers are conditioned on retrieved passages \cite{lewis2020rag}. Dense passage retrievers \cite{karpukhin2020dense} became standard for open-domain QA. RAG reduces reliance on parametric memory and improves factual consistency when retrieval is precise; however, purely dense retrieval can fail on queries requiring \textbf{multi-hop} reasoning or relational structure, where similarity to any single passage is insufficient \cite{yang2018hotpotqa,trivedi2022musique}.
+
+\textbf{Synthesis.} MIVA-KNIGHT adopts RAG as the generative backbone but treats dense retrieval as \emph{necessary but not sufficient}, which leads directly to hybrid retrieval (Section~\ref{sec:hybrid}).
+
+\section{Hybrid retrieval: dense vectors and knowledge graphs}
+\label{sec:hybrid}
+
+\subsection{Graph-augmented and graph-built retrieval}
+
+Recent systems construct or exploit graphs to improve coherence on global or thematic questions. \textbf{GraphRAG}-style pipelines summarize communities of entities for query-focused summarization \cite{edge2024graphrag}. Such approaches can be expensive in tokens and compute. Complementary work unifies LLM and KG perspectives in three paradigms: KG-enhanced LLMs, LLM-augmented KGs, and synergistic models \cite{pan2024unifying}.
+
+\subsection{HybridRAG and PMI-style re-ranking}
+
+Sarmah et al.\ propose \textbf{HybridRAG}, combining vector retrieval with KG traversal for multi-document QA \cite{sarmah2024hybridrag}. The MIVA-KNIGHT implementation (documented in the thesis) uses a \textbf{two-stage} retriever: FAISS inner-product search over L2-normalized embeddings, followed by re-ranking with entity co-occurrence statistics (PMI-weighted edges) extracted from captions or transcripts---conceptually aligned with hybrid dense--sparse paradigms \cite{karpukhin2020dense} but substituting graph overlap for BM25 when medical terminology is rare.
+
+\subsection{Multi-hop and regulated settings}
+
+Multi-hop QA accuracy falls as reasoning chains lengthen \cite{tang2024multihop}. In regulated environments, even low hallucination rates may be unacceptable; tiered confidence and abstention are therefore common design patterns, discussed further in Section~\ref{sec:xai}.
+
+\textbf{Gap.} Many published RAG systems assume \textbf{text-only} corpora. Multimodal RAG---retrieving across images, audio, and text in a unified space---remains less standardized, which motivates the multimodal sections below.
+
+\section{Multimodal machine learning: representation, alignment, and fusion}
+
+\subsection{Taxonomy and interaction design}
+
+Multimodal learning integrates heterogeneous signals (speech, vision, language, touch). Surveys emphasize joint representations, coordinated spaces, and fusion strategies \cite{kadam2022multimodal}. For voice-centric assistants, \textbf{synchronization} and user trust improve when systems surface evidence visually as well as verbally \cite{kadam2022multimodal}.
+
+\subsection{Contrastive alignment}
+
+\textbf{CLIP} showed that large-scale image--text contrastive learning yields transferable joint embeddings \cite{radford2021learning}. Extensions align \textbf{audio} with images or text (\textbf{AudioCLIP}, \textbf{CLAP}) \cite{guzhov2022audioclip,elizalde2023clap}. MIVA-KNIGHT follows a related but modular design: \textbf{frozen} backbones (e.g., BERT \cite{devlin2019bert}, ResNet \cite{he2016deep}, Wav2Vec~2.0 \cite{baevski2020wav2vec}) with \textbf{trainable projection heads} into a shared hypersphere, enabling surgical domain transfer (e.g., retraining only an image head for radiology captions on ROCO \cite{pelka2018radiology}).
+
+\subsection{Supervised contrastive learning}
+
+\textbf{SupCon} generalizes contrastive learning to fully supervised settings by treating all same-class samples as positives \cite{khosla2020supervised}. MIVA-KNIGHT uses InfoNCE--SupCon schedules for audio--visual emotion on CREMA-D \cite{cao2014crema}, following a rationale similar to speech representation papers that build on Wav2Vec features \cite{pepino2021emotion}.
+
+\subsection{Multimodal sentiment and fusion architectures}
+
+CMU-MOSI and CMU-MOSEI are standard benchmarks for multimodal sentiment \cite{zadeh2016mosi,zadeh2018multimodal}. Transformer fusion models (e.g., MulT \cite{tsai2019multimodal}, MISA \cite{hazarika2020misa}) establish strong baselines on MAE and binary accuracy. MIVA-KNIGHT's Pipeline~E follows this lineage with cross-modal attention over frozen projected embeddings.
+
+\textbf{Synthesis.} The literature supports \textbf{modular} multimodal stacks: strong unimodal encoders, small fusion or projection layers, and task-specific objectives---consistent with parameter-efficient transfer emphasized in the thesis.
+
+\section{Multimodal RAG systems and engineering baselines}
+
+Recent proposals combine retrieval with multimodal encoders: \textbf{HM-RAG}, \textbf{SAM-RAG}, \textbf{RT-RAG}, \textbf{OmniSearch}, and unified multimodal models such as \textbf{FLAVA} and \textbf{Unified I/O} \cite{liu2025hmrag,zhai2024samrag,shi2026rtrag,li2024omnisearch,singh2022flava,lu2022unified}. These systems illustrate rapid progress but often depend on cloud APIs or proprietary vision--language models. MIVA-KNIGHT explicitly targets a \textbf{reproducible, open-weights} stack (HuggingFace Transformers \cite{wolf2020transformers}, PyTorch \cite{paszke2019pytorch}, FAISS \cite{johnson2019billion}) for academic and privacy-sensitive settings.
+
+\section{Speech emotion, paralinguistics, and user state}
+
+\subsection{Benchmarks}
+
+\textbf{RAVDESS} provides acted emotional speech widely used for SER baselines \cite{livingstone2018ryerson}. \textbf{CREMA-D} adds audiovisual emotion clips at larger scale \cite{cao2014crema}. Reviews of multimodal fusion for emotion recognition summarize CNN, RNN, and transformer variants \cite{zhang2023multimodal}.
+
+\subsection{Link to assistants}
+
+Emotion labels or continuous sentiment can \textbf{condition} generation (tone, empathy) without replacing factual retrieval---a design choice reflected in MIVA-KNIGHT's prompt construction. This separates \emph{affective} conditioning from \emph{evidential} grounding, reducing the risk of confounding user emotion with clinical content.
+
+\section{Interpretability, confidence, and safety-aware generation}
+\label{sec:xai}
+
+Knowledge-graph methods are often motivated by interpretability: structured relations expose reasoning paths \cite{pan2024unifying}. Legal NLP benchmarks (e.g., LexGLUE) illustrate domain-specific evaluation \cite{chalkidis2022lexglue}. For assistants, \textbf{tiered confidence}---proceed, partial answer with disclaimer, or reject---implements a pragmatic compromise between utility and risk when similarity scores are ambiguous. Constitutional AI and preference tuning address safety at training time \cite{bai2022constitutional,ouyang2022training}; MIVA-KNIGHT complements these ideas with \textbf{inference-time} refusal when retrieval confidence is low (as formalized in the thesis).
+
+\section{Research gaps and positioning of MIVA-KNIGHT}
+
+\subsection{Identified gaps}
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item \textbf{Unified evaluation:} Multimodal RAG papers rarely report identical metrics across image retrieval, medical retrieval, emotion, and sentiment in one system.
+  \item \textbf{Graph cost vs.\ coverage:} GraphRAG-scale summarization is powerful but costly \cite{edge2024graphrag}; lightweight PMI graphs trade expressiveness for build time.
+  \item \textbf{Domain shift:} Moving from general captions (COCO) to radiology text (ROCO) stresses vocabulary and calibration \cite{pelka2018radiology}.
+  \item \textbf{Real-time and privacy:} Many demos assume cloud VLMs; on-device or low-cost inference remains an engineering research thread.
+\end{enumerate}
+
+\subsection{How MIVA-KNIGHT addresses the gaps (at a literature level)}
+
+MIVA-KNIGHT contributes a \textbf{systems integration} narrative: five pipelines feeding one embedding geometry, hybrid retrieval with explicit ablations, tiered guards, and a demonstration-oriented UI for source attribution. The comprehensive thesis supplies formal definitions (hypersphere embedding, PMI graph construction, reranking convex combinations, complexity notes) that go beyond this review's scope.
+
+\section{Conclusion}
+
+The literature establishes that \textbf{(1)}~retrieval is essential to reduce hallucinations in LLM assistants; \textbf{(2)}~hybrid dense--graph methods improve structured and multi-hop settings beyond dense-only RAG; \textbf{(3)}~multimodal contrastive and supervised contrastive learning provide scalable alignment for speech, vision, and text; \textbf{(4)}~multimodal sentiment and emotion models supply user-state signals that should remain separate from factual grounding; and \textbf{(5)}~interpretability and confidence gating are active research areas with direct implications for voice-centric, evidence-backed assistants. MIVA-KNIGHT situates itself at this intersection, with full algorithmic detail and empirical tables deferred to the project thesis and notebooks.
+
+\section*{Acknowledgment of review methodology}
+
+This narrative review prioritizes \textbf{thematic synthesis} over exhaustive enumeration. For a future update, a PRISMA-style systematic search could quantify paper counts per database; the present document matches the expectations of a graduate project literature chapter tied to an implemented system \cite{hart1998doing}.
+
+\bibliographystyle{IEEEtran}
+\bibliography{references_miva_knight}
+
+\end{document}
